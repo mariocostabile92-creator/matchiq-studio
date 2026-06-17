@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*TEMP_MPY*
+*.log
+.env
+.env.*
+storage/uploads/*
+storage/renders/*
+!storage/uploads/.gitkeep
+!storage/renders/.gitkeep

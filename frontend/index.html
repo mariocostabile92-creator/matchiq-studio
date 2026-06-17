@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#3d7dff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MatchIQ Studio" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MatchIQ Studio</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="app">
+    <aside class="sidebar" aria-label="Navigazione MatchIQ Studio">
+      <div class="identity">
+        <img class="brand-logo" src="/assets/brand/matchiq-app-icon.png" alt="MatchIQ Studio" />
+        <div>
+          <strong>MatchIQ Studio</strong>
+          <span>AI Creative Studio</span>
+        </div>
+      </div>
+
+      <nav class="nav-list">
+        <a class="active" href="#dashboard">Dashboard</a>
+        <a href="#project">Progetto</a>
+        <a href="#timeline">Timeline</a>
+        <a href="#brand">Brand Memory</a>
+        <a href="#media">Media Library</a>
+        <a href="#render">Render</a>
+      </nav>
+
+      <div class="phase-box">
+        <span>Fase 1</span>
+        <strong>Fondamenta</strong>
+        <p>Dashboard, progetti, timeline, memoria brand, media e rendering.</p>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar" id="dashboard">
+        <div>
+          <p class="eyebrow">MatchIQ Studio / Studio</p>
+          <h1>Console di produzione contenuti</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-btn" type="button">Salva bozza</button>
+          <button class="primary-btn compact" id="generateTopBtn" type="button">Crea MP4</button>
+        </div>
+      </header>
+
+      <section class="metrics-grid" aria-label="Stato del workspace">
+        <article>
+          <span>Progetti attivi</span>
+          <strong>4</strong>
+          <small>2 in produzione</small>
+        </article>
+        <article>
+          <span>Hook Score</span>
+          <strong id="hookScore">92</strong>
+          <small>Aggiornato live</small>
+        </article>
+        <article>
+          <span>Asset pronti</span>
+          <strong>18</strong>
+          <small>Brand kit incluso</small>
+        </article>
+        <article>
+          <span>Render engine</span>
+          <strong>OK</strong>
+          <small id="engineStatus">In attesa</small>
+        </article>
+      </section>
+
+      <section class="main-grid">
+        <section class="panel project-panel" id="project">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Progetto selezionato</p>
+              <h2>Founder Reel</h2>
+            </div>
+            <span class="status-pill">V1 Reel Engine</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Brand
+              <input id="brandName" value="MatchIQ Studio" />
+            </label>
+            <label>
+              Titolo principale
+              <input id="title" value="Non sto costruendo un software. Sto costruendo una visione." />
+            </label>
+            <label>
+              Tema
+              <input id="topic" value="Founder Story" />
+            </label>
+            <label>
+              Stile
+              <select id="tone">
+                <option value="cinematic">Cinematografico</option>
+                <option value="provocative">Provocatorio</option>
+                <option value="premium">Premium</option>
+                <option value="startup">Startup</option>
+              </select>
+            </label>
+            <label>
+              Stile render
+              <select id="visualStyle">
+                <option value="auto" selected>Auto scene</option>
+                <option value="cinematic">Cinematic</option>
+                <option value="data">Data / HUD</option>
+                <option value="sport">Sport lights</option>
+                <option value="editorial">Editorial</option>
+              </select>
+            </label>
+            <label>
+              Ritmo video
+              <select id="pacing">
+                <option value="balanced" selected>Bilanciato</option>
+                <option value="fast">Veloce</option>
+                <option value="slow">Lento premium</option>
+              </select>
+            </label>
+            <label>
+              Durata
+              <input id="durationSeconds" type="number" min="8" max="45" value="20" />
+            </label>
+            <label>
+              Call to action
+              <input id="callToAction" value="Il viaggio &egrave; appena iniziato" />
+            </label>
+          </div>
+
+          <div class="audio-grid">
+            <label class="toggle-row">
+              <input id="musicEnabled" type="checkbox" />
+              Musica demo
+            </label>
+            <label>
+              Volume musica
+              <input id="musicVolume" type="range" min="0" max="1" step="0.05" value="0.08" />
+            </label>
+            <label class="toggle-row">
+              <input id="voiceEnabled" type="checkbox" checked />
+              Voice over
+            </label>
+            <label>
+              Volume voce
+              <input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="0.95" />
+            </label>
+            <label>
+              Stile voce
+              <select id="voiceStyle">
+                <option value="studio" selected>Studio</option>
+                <option value="calm">Calma</option>
+                <option value="energetic">Energica</option>
+              </select>
+            </label>
+            <label>
+              Velocita' voce
+              <input id="voiceRate" type="range" min="-4" max="3" step="1" value="-1" />
+            </label>
+            <div class="audio-note">Il voice-over viene generato nel file MP4 con la voce locale di Windows. La musica demo resta opzionale.</div>
+          </div>
+
+          <div class="command-row">
+            <button class="primary-btn" id="generateBtn" type="button">Crea Reel MP4</button>
+            <div class="status-box" id="statusBox">Pronto a generare il primo Reel.</div>
+          </div>
+        </section>
+
+        <aside class="phone-panel" aria-label="Anteprima video">
+          <div class="phone">
+            <div class="phone-top"></div>
+            <div class="phone-screen" id="phoneScreen" data-tone="cinematic" data-motion="push">
+              <div class="motion-orb"></div>
+              <div class="motion-grid"></div>
+              <div class="motion-light"></div>
+              <span class="mini-label" id="previewKicker">Live motion preview</span>
+              <div class="preview-copy">
+                <h3 id="previewTitle">NON STO COSTRUENDO UN SOFTWARE</h3>
+                <p id="previewSubtitle">Sto costruendo una visione.</p>
+              </div>
+              <div class="preview-line"></div>
+              <span class="motion-note" id="previewMotionNote">Push-in lento - Parallax</span>
+              <img class="preview-logo" src="/assets/brand/matchiq-studio-primary.png" alt="" />
+              <small id="previewBrand">MatchIQ Studio</small>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="system-grid">
+        <article class="panel" id="timeline">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Timeline editor</p>
+              <h2>Scene del Reel</h2>
+            </div>
+            <span class="muted-label">7 scene</span>
+          </div>
+          <ol class="timeline-list" id="timelineList"></ol>
+        </article>
+
+        <article class="panel scene-editor-panel" id="sceneEditor">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Scene editor</p>
+              <h2 id="sceneEditorTitle">Seleziona una scena</h2>
+            </div>
+            <span class="muted-label" id="sceneEditorMeta">Draft</span>
+          </div>
+
+          <div class="editor-grid">
+            <label>
+              Titolo scena
+              <input id="sceneTitleInput" />
+            </label>
+            <label>
+              Sottotitolo
+              <input id="sceneSubtitleInput" />
+            </label>
+            <label>
+              Movimento
+              <select id="sceneMotionPreset">
+                <option value="Push-in lento - Zoom e parallax leggero">Push-in</option>
+                <option value="Carrellata laterale - Pan cinematico">Pan laterale</option>
+                <option value="Scan verticale - Glitch leggero">Scan / Codice</option>
+                <option value="Reveal centrale - Luce passante">Logo reveal</option>
+              </select>
+            </label>
+            <label>
+              Durata scena
+              <input id="sceneDurationInput" type="range" min="1.5" max="8" step="0.5" value="3" />
+            </label>
+            <label class="wide">
+              Visual
+              <textarea id="sceneVisualInput"></textarea>
+            </label>
+            <label class="wide">
+              Immagine scena
+              <select id="sceneImageInput">
+                <option value="">Nessuna immagine reale</option>
+              </select>
+            </label>
+            <label class="wide">
+              Camera e movimento
+              <textarea id="sceneMotionInput"></textarea>
+            </label>
+            <label class="wide">
+              Voice over
+              <textarea id="sceneVoiceInput"></textarea>
+            </label>
+            <div class="wide editor-actions">
+              <button class="primary-btn small-btn" id="regenerateSceneBtn" type="button">Rigenera scena</button>
+              <button class="ghost-btn small-btn" id="voicePreviewBtn" type="button">Ascolta preview voce</button>
+              <span id="voicePreviewStatus">Anteprima browser. Il render MP4 usa la voce locale di Windows.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel" id="brand">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Brand Memory</p>
+              <h2>Direzione creativa</h2>
+            </div>
+          </div>
+          <div class="memory-list">
+            <div><b>Voce</b><span>Ambiziosa, lucida, founder-led.</span></div>
+            <div><b>Promessa</b><span>Un team creativo AI in un solo sistema.</span></div>
+            <div><b>Regola</b><span>Ogni contenuto deve aprire con una frase forte.</span></div>
+            <div><b>Look</b><span>Premium, verticale, contrasto alto, testo leggibile.</span></div>
+          </div>
+        </article>
+
+        <article class="panel" id="media">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Media Library</p>
+              <h2>Asset pronti</h2>
+            </div>
+          </div>
+          <div class="media-upload">
+            <input id="mediaUploadInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            <div class="media-actions">
+              <button class="ghost-btn small-btn" id="autoAssignMediaBtn" type="button">Distribuisci nelle scene</button>
+              <button class="ghost-btn small-btn" id="clearSceneImageBtn" type="button">Pulisci scena</button>
+            </div>
+            <span id="mediaUploadStatus">Carica immagini reali per usarle nelle scene.</span>
+          </div>
+          <div class="asset-grid" id="mediaAssetGrid">
+            <div><span></span><b>Nessuna immagine</b><small>Carica il primo asset</small></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel result-panel hidden" id="resultBox">
+        <div class="panel-heading" id="render">
+          <div>
+            <p class="eyebrow">Render completato</p>
+            <h2>Anteprima MP4</h2>
+          </div>
+          <a id="downloadLink" class="ghost-btn" download>Scarica MP4</a>
+        </div>
+        <video id="reelVideo" controls playsinline></video>
+      </section>
+    </section>
+  </main>
+
+  <script src="/js/api.js?v=17"></script>
+  <script src="/js/app.js?v=17"></script>
+</body>
+</html>
+

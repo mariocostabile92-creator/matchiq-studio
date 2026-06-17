@@ -1,0 +1,42 @@
+{
+  "name": "MatchIQ Studio",
+  "short_name": "MatchIQ Studio",
+  "description": "AI Creative Studio for AI content production.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#0b0d12",
+  "theme_color": "#3d7dff",
+  "orientation": "any",
+  "categories": ["productivity", "graphics_and_design", "video"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Crea Reel",
+      "short_name": "Reel",
+      "description": "Apri MatchIQ Studio per creare un Reel.",
+      "url": "/#project"
+    },
+    {
+      "name": "Timeline",
+      "short_name": "Timeline",
+      "description": "Apri la timeline del progetto.",
+      "url": "/#timeline"
+    }
+  ]
+}
+
