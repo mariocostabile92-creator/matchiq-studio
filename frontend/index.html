@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#3d7dff" />
+  <meta name="theme-color" content="#0b0d12" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="MatchIQ Studio" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>MatchIQ Studio</title>
+
+  <title>MatchIQ Studio | AI Content Creation Platform</title>
+  <meta name="description" content="MatchIQ Studio è una piattaforma AI per creare reel, campagne, storyboard, voice-over e contenuti video professionali." />
+
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
+
 <body>
   <main class="app">
     <aside class="sidebar" aria-label="Navigazione MatchIQ Studio">
@@ -21,13 +25,13 @@
         <img class="brand-logo" src="/assets/brand/matchiq-app-icon.png" alt="MatchIQ Studio" />
         <div>
           <strong>MatchIQ Studio</strong>
-          <span>AI Creative Studio</span>
+          <span>AI Content Creation Platform</span>
         </div>
       </div>
 
       <nav class="nav-list">
         <a class="active" href="#dashboard">Dashboard</a>
-        <a href="#project">Progetto</a>
+        <a href="#project">Crea Reel</a>
         <a href="#timeline">Timeline</a>
         <a href="#brand">Brand Memory</a>
         <a href="#media">Media Library</a>
@@ -35,17 +39,20 @@
       </nav>
 
       <div class="phase-box">
-        <span>Fase 1</span>
-        <strong>Fondamenta</strong>
-        <p>Dashboard, progetti, timeline, memoria brand, media e rendering.</p>
+        <span>Studio V2</span>
+        <strong>Premium Workflow</strong>
+        <p>Brief, storyboard, scene editor, voice-over, media library e render MP4 in un’unica console.</p>
       </div>
     </aside>
 
     <section class="workspace">
       <header class="topbar" id="dashboard">
         <div>
-          <p class="eyebrow">MatchIQ Studio / Studio</p>
-          <h1>Console di produzione contenuti</h1>
+          <p class="eyebrow">MatchIQ Studio / AI Creative Suite</p>
+          <h1>Produci contenuti verticali con l’AI</h1>
+          <p class="muted-label" style="margin-top:10px;text-transform:none;letter-spacing:0;color:var(--muted);font-size:14px;font-weight:700;">
+            Reel, shorts, campagne social, video founder e contenuti per club: dall’idea al render MP4.
+          </p>
         </div>
         <div class="top-actions">
           <button class="ghost-btn" type="button">Salva bozza</button>
@@ -61,7 +68,7 @@
         </article>
         <article>
           <span>Hook Score</span>
-          <strong id="hookScore">92</strong>
+          <strong id="hookScore">96</strong>
           <small>Aggiornato live</small>
         </article>
         <article>
@@ -76,6 +83,29 @@
         </article>
       </section>
 
+      <section class="metrics-grid" aria-label="Azioni rapide">
+        <article>
+          <span>01</span>
+          <strong style="font-size:22px;">Crea Reel</strong>
+          <small>Brief, hook, scene e CTA.</small>
+        </article>
+        <article>
+          <span>02</span>
+          <strong style="font-size:22px;">Progetti</strong>
+          <small>Organizza contenuti e bozze.</small>
+        </article>
+        <article>
+          <span>03</span>
+          <strong style="font-size:22px;">Campagne</strong>
+          <small>Serie di contenuti per lancio o brand.</small>
+        </article>
+        <article>
+          <span>04</span>
+          <strong style="font-size:22px;">Export</strong>
+          <small>Render MP4 pronto per social.</small>
+        </article>
+      </section>
+
       <section class="main-grid">
         <section class="panel project-panel" id="project">
           <div class="panel-heading">
@@ -83,7 +113,7 @@
               <p class="eyebrow">Progetto selezionato</p>
               <h2>Founder Reel</h2>
             </div>
-            <span class="status-pill">V1 Reel Engine</span>
+            <span class="status-pill">V2 Premium Reel Engine</span>
           </div>
 
           <div class="form-grid">
@@ -132,7 +162,7 @@
             </label>
             <label>
               Call to action
-              <input id="callToAction" value="Il viaggio &egrave; appena iniziato" />
+              <input id="callToAction" value="Il viaggio è appena iniziato" />
             </label>
           </div>
 
@@ -162,7 +192,7 @@
               </select>
             </label>
             <label>
-              Velocita' voce
+              Velocità voce
               <input id="voiceRate" type="range" min="-4" max="3" step="1" value="-1" />
             </label>
             <div class="audio-note">Il voice-over viene generato nel file MP4 con la voce locale di Windows. La musica demo resta opzionale.</div>
@@ -313,8 +343,7 @@
     </section>
   </main>
 
-  <script src="/js/api.js?v=18"></script>
-  <script src="/js/app.js?v=18"></script>
+  <script src="/js/api.js?v=19"></script>
+  <script src="/js/app.js?v=19"></script>
 </body>
 </html>
-
