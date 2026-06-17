@@ -534,8 +534,142 @@ clearSceneImageBtn?.addEventListener("click", clearSelectedSceneImage);
 generateBtn.addEventListener("click", generateReel);
 generateTopBtn.addEventListener("click", generateReel);
 
+
+/* ─────────────────────────────
+   MATCHIQ STUDIO V2 PREMIUM UX
+───────────────────────────── */
+const newReelBtn = document.getElementById("newReelBtn");
+const continueProjectBtn = document.getElementById("continueProjectBtn");
+const openCampaignsBtn = document.getElementById("openCampaignsBtn");
+const quickTemplateSports = document.getElementById("quickTemplateSports");
+const studioSessionState = document.getElementById("studioSessionState");
+const creativeScoreMini = document.getElementById("creativeScoreMini");
+const renderStatusMini = document.getElementById("renderStatusMini");
+
+const DRAFT_KEY = "matchiq_studio_v2_draft";
+
+function scrollToStudioSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function saveLocalDraft() {
+  const draft = {
+    payload: buildPayload(),
+    storyboard: currentStoryboard,
+    selectedSceneIndex,
+    savedAt: new Date().toISOString(),
+  };
+
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    if (studioSessionState) studioSessionState.textContent = "Bozza salvata";
+    setStatus("Bozza salvata in locale su questo dispositivo.", "Salvato");
+  } catch (error) {
+    setStatus("Impossibile salvare la bozza in locale.", "Errore");
+  }
+}
+
+function loadLocalDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) {
+      setStatus("Nessuna bozza locale trovata. Puoi iniziare un nuovo Reel.", "Dashboard");
+      scrollToStudioSection("project");
+      return;
+    }
+
+    const draft = JSON.parse(raw);
+    const payload = draft.payload || {};
+
+    Object.entries({
+      brandName: payload.brand_name,
+      title: payload.title,
+      topic: payload.topic,
+      tone: payload.tone,
+      visualStyle: payload.visual_style,
+      pacing: payload.pacing,
+      durationSeconds: payload.duration_seconds,
+      callToAction: payload.call_to_action,
+    }).forEach(([id, value]) => {
+      const input = document.getElementById(id);
+      if (input && value !== undefined && value !== null) input.value = value;
+    });
+
+    if (musicEnabled) musicEnabled.checked = Boolean(payload.music_enabled);
+    if (voiceEnabled) voiceEnabled.checked = payload.voice_enabled ?? true;
+    if (musicVolume && payload.music_volume !== undefined) musicVolume.value = payload.music_volume;
+    if (voiceVolume && payload.voice_volume !== undefined) voiceVolume.value = payload.voice_volume;
+    if (voiceStyle && payload.voice_style) voiceStyle.value = payload.voice_style;
+    if (voiceRate && payload.voice_rate !== undefined) voiceRate.value = payload.voice_rate;
+
+    currentStoryboard = draft.storyboard || buildDraftStoryboard(buildPayload());
+    selectedSceneIndex = draft.selectedSceneIndex || 0;
+    updateTimeline();
+    fillSceneEditor();
+    updatePreviewFromScene();
+
+    if (studioSessionState) studioSessionState.textContent = "Bozza caricata";
+    setStatus("Bozza locale caricata. Puoi continuare il progetto.", "Dashboard");
+    scrollToStudioSection("project");
+  } catch (error) {
+    setStatus("Errore durante il caricamento della bozza locale.", "Errore");
+  }
+}
+
+function applySportsTemplate() {
+  const values = {
+    brandName: "MatchIQ Studio",
+    title: "La partita non finisce al fischio finale. Diventa contenuto.",
+    topic: "Reel società sportiva",
+    tone: "startup",
+    visualStyle: "sport",
+    pacing: "fast",
+    durationSeconds: "18",
+    callToAction: "Trasforma ogni partita in un contenuto professionale",
+  };
+
+  Object.entries(values).forEach(([id, value]) => {
+    const input = document.getElementById(id);
+    if (input) input.value = value;
+  });
+
+  currentStoryboard = buildDraftStoryboard(buildPayload());
+  selectedSceneIndex = 0;
+  updateTimeline();
+  fillSceneEditor();
+  updatePreviewFromScene();
+  setStatus("Template sportivo applicato. Ora puoi personalizzare le scene.", "Template");
+  scrollToStudioSection("project");
+}
+
+function updatePremiumDashboardState() {
+  const score = scoreHook(getValue("title") || "");
+  if (creativeScoreMini) creativeScoreMini.textContent = `${score}%`;
+  if (renderStatusMini) renderStatusMini.textContent = pollTimer ? "Rendering" : "Idle";
+}
+
+document.querySelectorAll("[data-scroll-target]").forEach((button) => {
+  button.addEventListener("click", () => scrollToStudioSection(button.dataset.scrollTarget));
+});
+
+document.querySelector(".top-actions .ghost-btn")?.addEventListener("click", saveLocalDraft);
+newReelBtn?.addEventListener("click", () => {
+  updatePreview();
+  scrollToStudioSection("project");
+  setStatus("Nuovo Reel pronto. Compila il brief e genera lo storyboard.", "Nuovo Reel");
+});
+continueProjectBtn?.addEventListener("click", loadLocalDraft);
+openCampaignsBtn?.addEventListener("click", () => {
+  setStatus("Modulo campagne pronto per la prossima fase V2.1.", "Campaigns");
+  scrollToStudioSection("brand");
+});
+quickTemplateSports?.addEventListener("click", applySportsTemplate);
+
+setInterval(updatePremiumDashboardState, 1200);
+
 registerServiceWorker();
 loadMediaAssets();
 updatePreview();
+updatePremiumDashboardState();
 
 

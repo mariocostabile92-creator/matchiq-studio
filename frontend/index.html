@@ -60,6 +60,57 @@
         </div>
       </header>
 
+      <section class="studio-hero" aria-label="Dashboard Premium MatchIQ Studio">
+        <div class="studio-hero-copy">
+          <span class="hero-badge">Studio V2 Premium</span>
+          <h2>The AI Content Operating System</h2>
+          <p>
+            Crea reel, campagne e contenuti verticali con una pipeline completa:
+            brief, storyboard, scene editor, voice-over, media library e render MP4.
+          </p>
+          <div class="hero-actions">
+            <button class="primary-btn" id="newReelBtn" type="button">+ Nuovo Reel</button>
+            <button class="ghost-btn" id="continueProjectBtn" type="button">Continua progetto</button>
+            <button class="ghost-btn" id="openCampaignsBtn" type="button">Campagne</button>
+          </div>
+        </div>
+
+        <div class="studio-control-card">
+          <div class="control-card-top">
+            <span>Live workspace</span>
+            <b id="studioSessionState">Pronto</b>
+          </div>
+          <div class="control-bars">
+            <div><span>Creative Score</span><strong id="creativeScoreMini">96%</strong></div>
+            <div><span>Render Status</span><strong id="renderStatusMini">Idle</strong></div>
+            <div><span>Formato</span><strong>9:16</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick-grid" aria-label="Azioni principali">
+        <button class="quick-card" type="button" data-scroll-target="project">
+          <span>01</span>
+          <strong>Crea Reel</strong>
+          <small>Brief, hook, scene e CTA.</small>
+        </button>
+        <button class="quick-card" type="button" id="quickTemplateSports">
+          <span>02</span>
+          <strong>Reel sportivo</strong>
+          <small>Template per club, partite e highlights.</small>
+        </button>
+        <button class="quick-card" type="button" data-scroll-target="media">
+          <span>03</span>
+          <strong>Media Library</strong>
+          <small>Carica immagini e asset reali.</small>
+        </button>
+        <button class="quick-card" type="button" data-scroll-target="render">
+          <span>04</span>
+          <strong>Export</strong>
+          <small>Anteprima e download MP4.</small>
+        </button>
+      </section>
+
       <section class="metrics-grid" aria-label="Stato del workspace">
         <article>
           <span>Progetti attivi</span>
@@ -80,29 +131,6 @@
           <span>Render engine</span>
           <strong>OK</strong>
           <small id="engineStatus">In attesa</small>
-        </article>
-      </section>
-
-      <section class="metrics-grid" aria-label="Azioni rapide">
-        <article>
-          <span>01</span>
-          <strong style="font-size:22px;">Crea Reel</strong>
-          <small>Brief, hook, scene e CTA.</small>
-        </article>
-        <article>
-          <span>02</span>
-          <strong style="font-size:22px;">Progetti</strong>
-          <small>Organizza contenuti e bozze.</small>
-        </article>
-        <article>
-          <span>03</span>
-          <strong style="font-size:22px;">Campagne</strong>
-          <small>Serie di contenuti per lancio o brand.</small>
-        </article>
-        <article>
-          <span>04</span>
-          <strong style="font-size:22px;">Export</strong>
-          <small>Render MP4 pronto per social.</small>
         </article>
       </section>
 
@@ -343,7 +371,15 @@
     </section>
   </main>
 
-  <script src="/js/api.js?v=19"></script>
-  <script src="/js/app.js?v=19"></script>
+  <nav class="mobile-bottom-nav" aria-label="Navigazione rapida mobile">
+    <a href="#dashboard">Home</a>
+    <a href="#project">Reel</a>
+    <a href="#timeline">Scene</a>
+    <a href="#media">Media</a>
+    <a href="#render">Render</a>
+  </nav>
+
+  <script src="/js/api.js?v=20"></script>
+  <script src="/js/app.js?v=20"></script>
 </body>
 </html>
