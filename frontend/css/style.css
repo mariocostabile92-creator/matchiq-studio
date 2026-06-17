@@ -1,14 +1,14 @@
 ﻿:root {
-  --bg: #0b0d12;
-  --surface: #11151d;
-  --surface-2: #171d27;
-  --surface-3: #1d2633;
-  --line: #2a3444;
-  --text: #f7f8fb;
-  --muted: #98a4b7;
-  --soft: #c7d0df;
-  --accent: #3d7dff;
-  --accent-2: #6ae4ff;
+  --bg: #030814;
+  --surface: #071426;
+  --surface-2: #0b1b33;
+  --surface-3: #102640;
+  --line: rgba(255, 255, 255, .12);
+  --text: #f5f8ff;
+  --muted: #9fb3cc;
+  --soft: #dbe8ff;
+  --accent: #78ff3f;
+  --accent-2: #1d9bff;
   --warning: #f5b84b;
   --danger: #ff6b6b;
 }
@@ -26,7 +26,10 @@ body {
   min-height: 100vh;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   color: var(--text);
-  background: var(--bg);
+  background:
+    radial-gradient(circle at top left, rgba(29, 155, 255, .18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(120, 255, 63, .10), transparent 36%),
+    var(--bg);
 }
 
 button,
@@ -51,7 +54,7 @@ button {
   height: 100vh;
   padding: 24px;
   border-right: 1px solid var(--line);
-  background: #0d1118;
+  background: linear-gradient(180deg, #06101f, #030814);
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -60,14 +63,15 @@ button {
 .identity {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .brand-mark,
 .brand-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  flex: none;
 }
 
 .brand-mark {
@@ -80,10 +84,16 @@ button {
 
 .brand-logo {
   display: block;
-  object-fit: cover;
-  background: #050910;
-  border: 1px solid rgba(255, 255, 255, .08);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, .26);
+  object-fit: contain;
+  object-position: center;
+  padding: 8px;
+  background:
+    radial-gradient(circle at top, rgba(29, 155, 255, .16), transparent 42%),
+    #050910;
+  border: 1px solid rgba(120, 255, 63, .22);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, .34),
+    0 0 28px rgba(29, 155, 255, .12);
 }
 
 .identity strong,
@@ -92,13 +102,14 @@ button {
 }
 
 .identity strong {
-  font-size: 18px;
+  font-size: 22px;
+  letter-spacing: -.4px;
 }
 
 .identity span {
-  margin-top: 2px;
+  margin-top: 4px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .nav-list {
@@ -117,7 +128,7 @@ button {
 
 .nav-list a:hover,
 .nav-list a.active {
-  background: var(--surface-2);
+  background: rgba(255, 255, 255, .06);
   color: var(--text);
 }
 
@@ -125,8 +136,8 @@ button {
   margin-top: auto;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
 }
 
 .phase-box span,
@@ -204,12 +215,14 @@ h2 {
 }
 
 .primary-btn {
-  color: #06120d;
-  background: var(--accent);
+  color: #03101f;
+  background: linear-gradient(135deg, var(--accent), #d8ff3f);
+  box-shadow: 0 12px 28px rgba(120, 255, 63, .18);
 }
 
 .primary-btn:hover {
-  background: #62dda5;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 42px rgba(120, 255, 63, .24);
 }
 
 .primary-btn:disabled {
@@ -238,8 +251,8 @@ h2 {
 .panel,
 .phone-panel {
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
 }
 
 .metrics-grid article {
@@ -283,7 +296,7 @@ h2 {
   border-radius: 999px;
   padding: 7px 10px;
   color: var(--accent);
-  background: rgba(63, 207, 142, .09);
+  background: rgba(120, 255, 63, .10);
   font-size: 12px;
   font-weight: 900;
 }
@@ -575,8 +588,8 @@ input[type="range"] {
 .preview-logo {
   position: relative;
   z-index: 2;
-  width: 118px;
-  max-height: 54px;
+  width: 136px;
+  max-height: 68px;
   object-fit: contain;
   object-position: left center;
   margin: 0 0 8px;
@@ -899,6 +912,17 @@ video {
 
   h1 {
     font-size: 28px;
+  }
+
+  .brand-mark,
+  .brand-logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+  }
+
+  .identity strong {
+    font-size: 20px;
   }
 }
 
