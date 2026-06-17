@@ -134,9 +134,9 @@ def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.I
         return None
 
     image = ImageOps.fit(image, (width, height), method=Image.Resampling.LANCZOS, centering=(.5, .5))
-    image = ImageEnhance.Contrast(image).enhance(1.08)
-    image = ImageEnhance.Color(image).enhance(.92)
-    return ImageEnhance.Brightness(image).enhance(.72)
+    image = ImageEnhance.Contrast(image).enhance(1.04)
+    image = ImageEnhance.Color(image).enhance(.98)
+    return ImageEnhance.Brightness(image).enhance(.90)
 
 
 def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> Image.Image:
@@ -145,12 +145,12 @@ def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> I
 
     for y in range(height):
         ratio = y / height
-        alpha = int(24 + 152 * ratio)
+        alpha = int(10 + 96 * ratio)
         draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
 
-    draw.rectangle((0, 0, width, int(height * .18)), fill=(0, 0, 0, 92))
-    draw.rectangle((0, int(height * .76), width, height), fill=(0, 0, 0, 128))
-    draw.line((int(width * .08), int(height * .19), int(width * .92), int(height * .19)), fill=(*accent, 210), width=3)
+    draw.rectangle((0, 0, width, int(height * .14)), fill=(0, 0, 0, 58))
+    draw.rectangle((0, int(height * .78), width, height), fill=(0, 0, 0, 92))
+    draw.line((int(width * .08), int(height * .16), int(width * .92), int(height * .16)), fill=(*accent, 190), width=3)
     return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 
 

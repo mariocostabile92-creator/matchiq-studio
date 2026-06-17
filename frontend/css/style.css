@@ -509,6 +509,15 @@ input[type="range"] {
   animation-duration: 3.6s;
 }
 
+.phone-screen[data-has-image="true"] .motion-orb,
+.phone-screen[data-has-image="true"] .motion-grid {
+  opacity: .12;
+}
+
+.phone-screen[data-has-image="true"] .motion-light {
+  opacity: .45;
+}
+
 .mini-label {
   position: relative;
   z-index: 2;
@@ -732,7 +741,7 @@ input[type="range"] {
 
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
 }
 
@@ -764,7 +773,7 @@ input[type="range"] {
 }
 
 .media-card {
-  min-height: 150px;
+  min-height: 190px;
   cursor: pointer;
 }
 
@@ -774,7 +783,7 @@ input[type="range"] {
 
 .media-card img {
   width: 100%;
-  height: 82px;
+  height: 122px;
   object-fit: cover;
 }
 

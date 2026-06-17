@@ -257,8 +257,9 @@ function updatePreviewFromScene() {
   phoneScreen.dataset.tone = payload.tone;
   phoneScreen.dataset.motion = getPreviewMotion(activeScene);
   phoneScreen.dataset.visualStyle = payload.visual_style;
+  phoneScreen.dataset.hasImage = activeScene?.image_url ? "true" : "false";
   phoneScreen.style.backgroundImage = activeScene?.image_url
-    ? `linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.82)), url("${activeScene.image_url}")`
+    ? `linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.24) 48%, rgba(0,0,0,.74) 100%), url("${activeScene.image_url}")`
     : "";
   hookScore.textContent = scoreHook(payload.title);
 }
