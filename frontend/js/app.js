@@ -542,6 +542,10 @@ updatePreview();
    MatchIQ Studio V2.3 Dashboard helpers
    ============================== */
 function setActiveNavigation(id) {
+  document.body.dataset.activeView = id;
+  document.body.classList.add("route-transition");
+  window.setTimeout(() => document.body.classList.remove("route-transition"), 260);
+
   document.querySelectorAll("[data-nav-target]").forEach((link) => {
     link.classList.toggle("active", link.dataset.navTarget === id);
   });
@@ -635,6 +639,10 @@ function bindDashboardEnterpriseActions() {
   });
 
   document.getElementById("newReelBtn")?.addEventListener("click", () => {
+    applyStudioTemplate("founder");
+  });
+
+  document.getElementById("sidebarNewReelBtn")?.addEventListener("click", () => {
     applyStudioTemplate("founder");
   });
 
