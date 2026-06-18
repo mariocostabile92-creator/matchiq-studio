@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from backend.app.video.storyboard import StoryboardPlan
 from backend.app.video.storyboard import ScenePlan
@@ -56,3 +56,27 @@ class SceneRegenerateRequest(BaseModel):
     topic: str = Field(default="Founder Story")
     variant_seed: int = Field(default=0, ge=0, le=99)
 
+
+class HookGenerateRequest(BaseModel):
+    brand_name: str = Field(default="MatchIQ Studio")
+    topic: str = Field(default="Founder Story")
+    platform: str = Field(default="LinkedIn")
+    tone: str = Field(default="cinematic")
+    target: str = Field(default="creator, club, founder")
+    count: int = Field(default=10, ge=3, le=12)
+
+
+class HookSuggestion(BaseModel):
+    score: float = Field(ge=0, le=10)
+    hook: str
+    angle: str
+    why_it_works: str
+    suggested_topic: str
+    suggested_tone: str
+    suggested_cta: str
+
+
+class HookGenerateResponse(BaseModel):
+    success: bool = True
+    message: str = "Hook generati."
+    hooks: list[HookSuggestion]

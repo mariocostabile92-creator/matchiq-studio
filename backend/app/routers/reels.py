@@ -4,13 +4,15 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException
 
 from backend.app.schemas.reel import (
+    HookGenerateRequest,
+    HookGenerateResponse,
     ReelCreateRequest,
     ReelJobResponse,
     SceneRegenerateRequest,
     ReelStatusResponse,
     StoryboardRenderRequest,
 )
-from backend.app.ai.creative_director import build_storyboard
+from backend.app.ai.creative_director import build_storyboard, generate_hooks
 from backend.app.ai.scene_regenerator import regenerate_scene
 from backend.app.render.reel_renderer import render_storyboard
 from backend.app.services.reel_engine import build_reel
@@ -50,22 +52,9 @@ def _run_reel_job(job_id: str, payload: ReelCreateRequest):
             on_progress=on_progress,
         )
 
-        JOBS[job_id].update({
-            "status": "done",
-            "progress": 100,
-            "message": "Reel generato con successo.",
-            "filename": filename,
-            "render_url": f"/renders/{filename}",
-            "error": None,
-        })
-
+        JOBS[job_id].update({"status":"done","progress":100,"message":"Reel generato con successo.","filename":filename,"render_url":f"/renders/{filename}","error":None})
     except Exception as exc:
-        JOBS[job_id].update({
-            "status": "error",
-            "progress": 0,
-            "message": "Errore durante la generazione.",
-            "error": str(exc),
-        })
+        JOBS[job_id].update({"status":"error","progress":0,"message":"Errore durante la generazione.","error":str(exc)})
 
 
 def _run_storyboard_render_job(job_id: str, payload: StoryboardRenderRequest):
@@ -93,65 +82,25 @@ def _run_storyboard_render_job(job_id: str, payload: StoryboardRenderRequest):
             on_progress=on_progress,
         )
 
-        JOBS[job_id].update({
-            "status": "done",
-            "progress": 100,
-            "message": "Storyboard renderizzato con successo.",
-            "filename": filename,
-            "render_url": f"/renders/{filename}",
-            "error": None,
-        })
+        JOBS[job_id].update({"status":"done","progress":100,"message":"Storyboard renderizzato con successo.","filename":filename,"render_url":f"/renders/{filename}","error":None})
     except Exception as exc:
-        JOBS[job_id].update({
-            "status": "error",
-            "progress": 0,
-            "message": "Errore durante il render dello storyboard.",
-            "error": str(exc),
-        })
+        JOBS[job_id].update({"status":"error","progress":0,"message":"Errore durante il render dello storyboard.","error":str(exc)})
 
 
 @router.post("/create", response_model=ReelJobResponse)
 def create_reel(payload: ReelCreateRequest):
     job_id = uuid4().hex[:12]
-
-    JOBS[job_id] = {
-        "status": "queued",
-        "progress": 5,
-        "message": "Reel messo in coda.",
-        "filename": None,
-        "render_url": None,
-        "error": None,
-    }
-
+    JOBS[job_id] = {"status":"queued","progress":5,"message":"Reel messo in coda.","filename":None,"render_url":None,"error":None}
     executor.submit(_run_reel_job, job_id, payload)
-
-    return ReelJobResponse(
-        success=True,
-        message="Generazione avviata.",
-        job_id=job_id,
-    )
+    return ReelJobResponse(success=True, message="Generazione avviata.", job_id=job_id)
 
 
 @router.post("/render-storyboard", response_model=ReelJobResponse)
 def render_edited_storyboard(payload: StoryboardRenderRequest):
     job_id = uuid4().hex[:12]
-
-    JOBS[job_id] = {
-        "status": "queued",
-        "progress": 5,
-        "message": "Storyboard messo in coda.",
-        "filename": None,
-        "render_url": None,
-        "error": None,
-    }
-
+    JOBS[job_id] = {"status":"queued","progress":5,"message":"Storyboard messo in coda.","filename":None,"render_url":None,"error":None}
     executor.submit(_run_storyboard_render_job, job_id, payload)
-
-    return ReelJobResponse(
-        success=True,
-        message="Render storyboard avviato.",
-        job_id=job_id,
-    )
+    return ReelJobResponse(success=True, message="Render storyboard avviato.", job_id=job_id)
 
 
 @router.post("/storyboard", response_model=StoryboardPlan)
@@ -164,6 +113,19 @@ def create_storyboard(payload: ReelCreateRequest):
         duration_seconds=payload.duration_seconds,
         call_to_action=payload.call_to_action,
     )
+
+
+@router.post("/generate-hooks", response_model=HookGenerateResponse)
+def generate_reel_hooks(payload: HookGenerateRequest):
+    hooks = generate_hooks(
+        brand_name=payload.brand_name,
+        topic=payload.topic,
+        platform=payload.platform,
+        tone=payload.tone,
+        target=payload.target,
+        count=payload.count,
+    )
+    return HookGenerateResponse(success=True, message="Hook generati dal MatchIQ Hook Engine.", hooks=hooks)
 
 
 @router.post("/regenerate-scene")
@@ -179,16 +141,6 @@ def regenerate_storyboard_scene(payload: SceneRegenerateRequest):
 @router.get("/status/{job_id}", response_model=ReelStatusResponse)
 def get_reel_status(job_id: str):
     job = JOBS.get(job_id)
-
     if not job:
         raise HTTPException(status_code=404, detail="Job non trovato.")
-
-    return ReelStatusResponse(
-        success=True,
-        status=job["status"],
-        message=job["message"],
-        progress=job["progress"],
-        render_url=job["render_url"],
-        filename=job["filename"],
-        error=job["error"],
-    )
+    return ReelStatusResponse(success=True,status=job["status"],message=job["message"],progress=job["progress"],render_url=job["render_url"],filename=job["filename"],error=job["error"])
