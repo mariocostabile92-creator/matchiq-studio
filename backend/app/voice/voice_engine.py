@@ -1,3 +1,4 @@
+import re
 import subprocess
 from pathlib import Path
 
@@ -33,17 +34,41 @@ VOICE_STYLE_RATES = {
     "calm": -2,
     "studio": -1,
     "energetic": 1,
+    "epic": 0,
 }
+
+
+def prepare_voice_script(text: str, style: str = "studio") -> str:
+    """Prepare text for better Windows TTS delivery.
+
+    System.Speech is not a premium neural voice, but punctuation and spacing
+    make a big difference. This adds short pauses after strong phrases.
+    """
+
+    clean_text = " ".join((text or "").split())
+    if not clean_text:
+        return ""
+
+    clean_text = re.sub(r"\s*([.!?])\s*", r"\1 ", clean_text)
+    clean_text = clean_text.replace("...", ". ")
+    clean_text = clean_text.replace("MatchIQ", "Match I Q")
+
+    if style in {"studio", "epic"}:
+        clean_text = clean_text.replace(". ", ".  ")
+        clean_text = clean_text.replace("? ", "?  ")
+        clean_text = clean_text.replace("! ", "!  ")
+
+    return clean_text.strip()
 
 
 def synthesize_scene_voice(
     text: str,
     output_path: Path,
-    volume: float = 0.95,
+    volume: float = 1.0,
     style: str = "studio",
     rate: int | None = None,
 ) -> Path | None:
-    clean_text = " ".join((text or "").split())
+    clean_text = prepare_voice_script(text, style=style)
     if not clean_text:
         return None
 
@@ -51,8 +76,10 @@ def synthesize_scene_voice(
     script_path = output_path.parent / "matchiq_tts.ps1"
     script_path.write_text(TTS_SCRIPT, encoding="utf-8")
 
-    safe_volume = int(max(0, min(100, round(volume * 100))))
+    # Push voice louder by default. The renderer will keep music lower.
+    safe_volume = int(max(0, min(100, round(max(volume, 0.92) * 100))))
     safe_rate = max(-4, min(3, rate if rate is not None else VOICE_STYLE_RATES.get(style, -1)))
+
     command = [
         "powershell",
         "-NoProfile",

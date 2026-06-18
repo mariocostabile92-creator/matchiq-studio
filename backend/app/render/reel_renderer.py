@@ -323,7 +323,7 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
     return VideoClip(frame_function=make_frame, duration=duration)
 
 
-def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = False, music_volume: float = 0.08, voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
+def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = False, music_volume: float = 0.05, music_mood: str = "cinematic", voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
     width, height = (DRAFT_WIDTH, DRAFT_HEIGHT) if quality == "draft" else (FINAL_WIDTH, FINAL_HEIGHT)
     fps = 20 if quality == "draft" else 24
     preset = "ultrafast" if quality == "draft" else "medium"
@@ -347,7 +347,7 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     if music_enabled:
         if on_progress:
             on_progress(88, "Sto aggiungendo musica e mix audio...")
-        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=music_volume)
+        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(music_volume, 0.08), mood=music_mood)
         audio_tracks.append(music_audio)
         audio_clips_to_close.append(music_audio)
     if voice_enabled:
@@ -356,11 +356,11 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
         offset = 0.0
         for index, scene in enumerate(storyboard.scenes, start=1):
             voice_path = work_dir / f"voice_{index}.wav"
-            generated_path = synthesize_scene_voice(scene.voice_over or scene.subtitle, voice_path, voice_volume, style=voice_style, rate=voice_rate)
+            generated_path = synthesize_scene_voice(scene.voice_over or scene.subtitle, voice_path, max(voice_volume, 0.98), style=voice_style, rate=voice_rate)
             pause_before = float(_scene_attr(scene, "voice_pause_before", 0.08))
             pause_after = float(_scene_attr(scene, "voice_pause_after", 0.15))
             if generated_path:
-                voice_clip = AudioFileClip(str(generated_path)).with_volume_scaled(voice_volume)
+                voice_clip = AudioFileClip(str(generated_path)).with_volume_scaled(max(voice_volume, 1.0))
                 max_voice_duration = max(.4, scene.duration_seconds - pause_before - pause_after)
                 if voice_clip.duration > max_voice_duration:
                     voice_clip = voice_clip.subclipped(0, max_voice_duration)
