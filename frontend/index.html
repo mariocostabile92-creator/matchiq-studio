@@ -46,12 +46,12 @@
     </aside>
 
     <section class="workspace">
-      <header class="topbar" id="dashboard">
+      <header class="topbar topbar-v24" id="dashboard">
         <div>
-          <p class="eyebrow">MatchIQ Studio / AI Creative Suite</p>
-          <h1>Produci contenuti verticali con l’AI</h1>
-          <p class="muted-label" style="margin-top:10px;text-transform:none;letter-spacing:0;color:var(--muted);font-size:14px;font-weight:700;">
-            Reel, shorts, campagne social, video founder e contenuti per club: dall’idea al render MP4.
+          <p class="eyebrow">MatchIQ Studio / Command Center</p>
+          <h1>Centro creativo AI per contenuti verticali</h1>
+          <p class="topbar-subtitle">
+            Dashboard, progetti, storyboard, media e render in un unico workflow premium.
           </p>
         </div>
         <div class="top-actions">
@@ -60,30 +60,53 @@
         </div>
       </header>
 
-      <section class="studio-hero" aria-label="Dashboard Premium MatchIQ Studio">
+      <section class="studio-hero studio-hero-v24" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V2 Premium</span>
-          <h2>The AI Content Operating System</h2>
+          <span class="hero-badge">Studio V2.4 Enterprise</span>
+          <h2>Bentornato, Mario.</h2>
           <p>
-            Crea reel, campagne e contenuti verticali con una pipeline completa:
-            brief, storyboard, scene editor, voice-over, media library e render MP4.
+            Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
+            in contenuti verticali pronti per LinkedIn, Instagram, TikTok e YouTube Shorts.
           </p>
           <div class="hero-actions">
             <button class="primary-btn" id="newReelBtn" type="button">+ Nuovo Reel</button>
-            <button class="ghost-btn" id="continueProjectBtn" type="button">Continua progetto</button>
-            <button class="ghost-btn" id="openCampaignsBtn" type="button">Campagne</button>
+            <button class="ghost-btn" id="continueProjectBtn" type="button">Continua Founder Reel</button>
+            <button class="ghost-btn" id="openCampaignsBtn" type="button">Crea campagna</button>
+          </div>
+
+          <div class="hero-kpi-row" aria-label="Statistiche rapide">
+            <div>
+              <span>Reel in lavorazione</span>
+              <strong>3</strong>
+            </div>
+            <div>
+              <span>Render completati</span>
+              <strong>12</strong>
+            </div>
+            <div>
+              <span>Creative Score</span>
+              <strong id="creativeScoreMini">96%</strong>
+            </div>
+            <div>
+              <span>Formato</span>
+              <strong>9:16</strong>
+            </div>
           </div>
         </div>
 
-        <div class="studio-control-card">
-          <div class="control-card-top">
-            <span>Live workspace</span>
-            <b id="studioSessionState">Pronto</b>
+        <div class="studio-command-preview">
+          <div class="command-preview-head">
+            <span>AI Studio Assistant</span>
+            <b id="studioSessionState">Live</b>
           </div>
-          <div class="control-bars">
-            <div><span>Creative Score</span><strong id="creativeScoreMini">96%</strong></div>
-            <div><span>Render Status</span><strong id="renderStatusMini">Idle</strong></div>
-            <div><span>Formato</span><strong>9:16</strong></div>
+          <div class="assistant-message-card">
+            <strong>Ciao Mario, il workspace è pronto.</strong>
+            <p>Hook forte, durata bilanciata e render engine disponibile. Il prossimo passo consigliato è migliorare la CTA.</p>
+          </div>
+          <div class="pipeline-mini" aria-label="Pipeline contenuto">
+            <div><span>Brief</span><b>OK</b></div>
+            <div><span>Storyboard</span><b>96%</b></div>
+            <div><span>Render</span><b id="renderStatusMini">Idle</b></div>
           </div>
         </div>
       </section>
@@ -111,56 +134,39 @@
         </button>
       </section>
 
-      <section class="enterprise-grid" aria-label="Dashboard operativa MatchIQ Studio">
+      <section class="enterprise-grid enterprise-grid-v24" aria-label="Dashboard operativa MatchIQ Studio">
         <article class="enterprise-card enterprise-main">
           <div class="panel-heading compact-heading">
             <div>
-              <p class="eyebrow">Centro operativo</p>
-              <h2>Bentornato, Mario</h2>
+              <p class="eyebrow">Progetti recenti</p>
+              <h2>Continua da dove eri rimasto</h2>
             </div>
-            <span class="status-pill">Live</span>
+            <span class="status-pill">Workspace attivo</span>
           </div>
 
-          <div class="command-center">
-            <div>
-              <span>Reel in lavorazione</span>
-              <strong>3</strong>
-              <small>Founder Story, Promo MatchIQ, Reel sportivo</small>
-            </div>
-            <div>
-              <span>Render completati</span>
-              <strong>12</strong>
-              <small>Ultimi 7 giorni</small>
-            </div>
-            <div>
-              <span>AI Credits</span>
-              <strong>82%</strong>
-              <small>Workspace demo</small>
-            </div>
-          </div>
-
-          <div class="recent-projects">
-            <button type="button" class="recent-project-card" data-template="founder">
+          <div class="recent-projects recent-projects-v24">
+            <button type="button" class="recent-project-card featured-project" data-template="founder">
               <span>Founder Reel</span>
               <strong>Visione, brand, lancio</strong>
-              <small>Ultima modifica: oggi</small>
+              <small>Ultima modifica: oggi · Pronto per render</small>
             </button>
             <button type="button" class="recent-project-card" data-template="sport">
               <span>Reel sportivo</span>
               <strong>Match day / highlights</strong>
-              <small>Template pronto</small>
+              <small>Template per club e partite</small>
             </button>
             <button type="button" class="recent-project-card" data-template="sponsor">
               <span>Promo Sponsor</span>
               <strong>Post verticale commerciale</strong>
-              <small>Campagna club</small>
+              <small>Campagna sponsor pronta</small>
             </button>
           </div>
         </article>
 
-        <article class="enterprise-card assistant-card">
+        <article class="enterprise-card assistant-card assistant-card-v24">
           <p class="eyebrow">AI Studio Assistant</p>
           <h2>Consigli rapidi</h2>
+          <p class="assistant-intro">Ho analizzato il progetto attivo. Puoi migliorare subito hook, CTA o template.</p>
           <div class="assistant-list">
             <button type="button" data-suggestion="hook">Rendi l’hook più forte</button>
             <button type="button" data-suggestion="cta">CTA più chiara</button>
@@ -168,7 +174,7 @@
           </div>
         </article>
 
-        <article class="enterprise-card render-card">
+        <article class="enterprise-card render-card render-card-v24">
           <p class="eyebrow">Render Queue</p>
           <h2>Produzione</h2>
           <div class="render-queue">

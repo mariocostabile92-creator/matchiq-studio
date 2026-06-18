@@ -1,4 +1,5 @@
-const CACHE_NAME = "matchiq-studio-shell-v18";
+const CACHE_NAME = "matchiq-studio-shell-v20";
+
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -11,19 +12,25 @@ const APP_SHELL = [
   "/assets/brand/matchiq-logo-official.png",
   "/assets/brand/matchiq-studio-primary.png",
   "/css/style.css",
-  "/js/api.js?v=18",
-  "/js/app.js?v=18"
+  "/js/api.js?v=20",
+  "/js/app.js?v=20"
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((key) => caches.delete(key)))
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
     )
   );
   self.clients.claim();
@@ -33,11 +40,13 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  if (request.method !== "GET") {
-    return;
-  }
+  if (request.method !== "GET") return;
 
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/renders/")) {
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/renders/") ||
+    url.pathname.startsWith("/media/")
+  ) {
     event.respondWith(fetch(request));
     return;
   }
@@ -45,10 +54,16 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
+        if (!response || response.status !== 200 || response.type === "opaque") {
+          return response;
+        }
+
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match("/index.html")))
+      .catch(() =>
+        caches.match(request).then((cached) => cached || caches.match("/index.html"))
+      )
   );
 });
