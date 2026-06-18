@@ -1,8 +1,9 @@
-﻿from pathlib import Path
+from pathlib import Path
 from uuid import uuid4
+import math
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 from moviepy import AudioFileClip, CompositeAudioClip, VideoClip, concatenate_videoclips
 
 from backend.app.core.config import RENDERS_DIR, UPLOADS_DIR
@@ -24,7 +25,6 @@ TONE_BACKGROUNDS = {
     "startup": ((4, 18, 15), (13, 72, 52), (63, 207, 142)),
 }
 
-OVERSCAN = 1.12
 BRAND_ICON_PATH = FRONTEND_DIR / "assets" / "brand" / "matchiq-app-icon.png"
 _BRAND_ICON_CACHE = {}
 
@@ -57,6 +57,10 @@ def _wrap_text(text: str, font, max_width: int, width: int, height: int):
         lines.append(current)
 
     return lines
+
+
+def _scene_attr(scene, name: str, default):
+    return getattr(scene, name, default)
 
 
 def _resolve_visual_style(visual_style: str, scene_index: int) -> str:
@@ -134,9 +138,9 @@ def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.I
         return None
 
     image = ImageOps.fit(image, (width, height), method=Image.Resampling.LANCZOS, centering=(.5, .5))
-    image = ImageEnhance.Contrast(image).enhance(1.04)
-    image = ImageEnhance.Color(image).enhance(.98)
-    return ImageEnhance.Brightness(image).enhance(.90)
+    image = ImageEnhance.Contrast(image).enhance(1.08)
+    image = ImageEnhance.Color(image).enhance(1.02)
+    return ImageEnhance.Brightness(image).enhance(.88)
 
 
 def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> Image.Image:
@@ -145,13 +149,69 @@ def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> I
 
     for y in range(height):
         ratio = y / height
-        alpha = int(10 + 96 * ratio)
+        alpha = int(14 + 118 * ratio)
         draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
 
-    draw.rectangle((0, 0, width, int(height * .14)), fill=(0, 0, 0, 58))
-    draw.rectangle((0, int(height * .78), width, height), fill=(0, 0, 0, 92))
+    draw.rectangle((0, 0, width, int(height * .14)), fill=(0, 0, 0, 62))
+    draw.rectangle((0, int(height * .78), width, height), fill=(0, 0, 0, 102))
     draw.line((int(width * .08), int(height * .16), int(width * .92), int(height * .16)), fill=(*accent, 190), width=3)
     return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+
+
+def _apply_cinematic_grade(img: Image.Image, scene, accent, width: int, height: int) -> Image.Image:
+    color_grade = _scene_attr(scene, "color_grade", "sport_tech_dark")
+    glow = _scene_attr(scene, "glow", "medium")
+    grain = _scene_attr(scene, "grain", "subtle")
+    vignette = _scene_attr(scene, "vignette", "medium")
+
+    contrast = 1.08 if color_grade != "soft" else 1.02
+    saturation = 1.04 if "sport" in color_grade or "dark" in color_grade else 1.0
+    img = ImageEnhance.Contrast(img).enhance(contrast)
+    img = ImageEnhance.Color(img).enhance(saturation)
+
+    if glow in {"medium", "strong"}:
+        glow_layer = img.filter(ImageFilter.GaussianBlur(radius=10 if glow == "medium" else 16))
+        alpha = 0.10 if glow == "medium" else 0.16
+        img = Image.blend(img, glow_layer, alpha)
+
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+
+    if vignette in {"medium", "strong"}:
+        max_radius = math.sqrt((width / 2) ** 2 + (height / 2) ** 2)
+        center_x, center_y = width / 2, height / 2
+        strength = 120 if vignette == "medium" else 165
+        for y in range(0, height, 3):
+            for x in range(0, width, 3):
+                dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+                alpha = int(max(0, (dist / max_radius - .42)) * strength)
+                if alpha > 0:
+                    draw.rectangle((x, y, x + 3, y + 3), fill=(0, 0, 0, min(130, alpha)))
+
+    if grain in {"subtle", "medium"}:
+        rng = np.random.default_rng(seed=scene.index * 17)
+        noise_alpha = 10 if grain == "subtle" else 18
+        noise = rng.integers(0, 255, (height, width), dtype=np.uint8)
+        noise_img = Image.fromarray(noise, "L").convert("RGBA")
+        noise_img.putalpha(noise_alpha)
+        overlay = Image.alpha_composite(overlay, noise_img)
+
+    return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+
+
+def _draw_particles(draw, scene, accent, width: int, height: int):
+    particles = _scene_attr(scene, "particles", "light")
+    if particles == "none":
+        return
+
+    count = 18 if particles == "light" else 36
+    rng = np.random.default_rng(seed=scene.index * 31)
+    for _ in range(count):
+        x = int(rng.uniform(width * .05, width * .95))
+        y = int(rng.uniform(height * .12, height * .72))
+        r = int(rng.uniform(1, 3 if particles == "light" else 5))
+        alpha_color = tuple(min(255, int(v * rng.uniform(.55, 1.2))) for v in accent)
+        draw.ellipse((x - r, y - r, x + r, y + r), fill=alpha_color)
 
 
 def _draw_scene(
@@ -193,6 +253,8 @@ def _draw_scene(
     if not media_image:
         _draw_scene_motif(img, draw, scene, accent, width, height)
 
+    _draw_particles(draw, scene, accent, width, height)
+
     brand_font = _get_font(max(24, width // 24))
     title_font = _get_font(max(42, width // 12))
     small_font = _get_font(max(18, width // 34))
@@ -213,6 +275,8 @@ def _draw_scene(
 
     draw.text((margin, height - margin - 34), f"{scene.index}/{len(storyboard.scenes)}", font=small_font, fill=accent)
     draw.text((margin, height - margin), "CREATED WITH MatchIQ Studio", font=small_font, fill=(220, 230, 245))
+
+    img = _apply_cinematic_grade(img, scene, accent, width, height)
     img.save(output_path)
 
 
@@ -228,6 +292,9 @@ def _draw_scene_text(
     scene_index: int,
 ):
     kind = _motion_kind(scene)
+    subtitle_position = _scene_attr(scene, "subtitle_position", "center")
+    text_animation = _scene_attr(scene, "text_animation", "word_reveal")
+    emphasis_words = [word.upper() for word in _scene_attr(scene, "text_emphasis", [])]
 
     if style == "editorial":
         x = int(width * (.16 if scene_index % 2 else .10))
@@ -260,6 +327,11 @@ def _draw_scene_text(
         max_width = int(width * .76)
         align = "center"
 
+    if subtitle_position == "lower":
+        y = int(height * .60)
+    elif subtitle_position == "upper":
+        y = int(height * .34)
+
     lines = _wrap_text(scene.subtitle.upper(), title_font, max_width, width, height)[:4]
     line_height = int(width * .105)
     start_y = y - (len(lines) * line_height) // 2
@@ -268,7 +340,18 @@ def _draw_scene_text(
         bbox = draw.textbbox((0, 0), line, font=title_font)
         line_width = bbox[2] - bbox[0]
         draw_x = x if align == "left" else (width - line_width) // 2
-        draw.text((draw_x, start_y), line, font=title_font, fill=(255, 255, 255))
+
+        if text_animation in {"word_reveal", "kinetic"} and emphasis_words:
+            current_x = draw_x
+            for token in line.split(" "):
+                clean = token.strip(".,!?;:").upper()
+                fill = accent if clean in emphasis_words else (255, 255, 255)
+                draw.text((current_x, start_y), token, font=title_font, fill=fill)
+                token_w = draw.textbbox((0, 0), f"{token} ", font=title_font)[2]
+                current_x += token_w
+        else:
+            draw.text((draw_x, start_y), line, font=title_font, fill=(255, 255, 255))
+
         start_y += line_height
 
     voice = (scene.voice_over or scene.subtitle).strip()
@@ -363,9 +446,9 @@ def _get_brand_icon(width: int):
 
 
 def _motion_kind(scene) -> str:
-    text = f"{scene.title} {scene.camera} {scene.motion} {scene.visual}".lower()
+    text = f"{scene.title} {scene.camera} {scene.motion} {scene.visual} {_scene_attr(scene, 'transition', '')}".lower()
 
-    if "laterale" in text or "campo" in text or "carrellata" in text:
+    if "laterale" in text or "campo" in text or "carrellata" in text or "pan" in text:
         return "pan"
 
     if "logo" in text or "reveal" in text:
@@ -390,18 +473,32 @@ def _pacing_factor(pacing: str) -> float:
     }.get(pacing, 1.0)
 
 
+def _motion_speed_factor(scene) -> float:
+    speed = _scene_attr(scene, "motion_speed", "medium")
+    return {
+        "slow": .72,
+        "medium": 1.0,
+        "fast": 1.32,
+        "impact": 1.55,
+    }.get(speed, 1.0)
+
+
 def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing: str):
     duration = scene.duration_seconds
     motion = _motion_kind(scene)
+    zoom_level = float(_scene_attr(scene, "zoom_level", 1.08))
+    zoom_level = max(1.02, min(1.6, zoom_level))
+    overscan = max(zoom_level, 1.08)
     source = Image.open(scene_path).convert("RGB")
-    zoomed_width = int(width * OVERSCAN)
-    zoomed_height = int(height * OVERSCAN)
+    zoomed_width = int(width * overscan)
+    zoomed_height = int(height * overscan)
     source = source.resize((zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
     max_x = zoomed_width - width
     max_y = zoomed_height - height
+    speed_factor = _motion_speed_factor(scene)
 
     def crop_origin(t):
-        progress = _ease(min(1.0, (t / duration) * _pacing_factor(pacing)))
+        progress = _ease(min(1.0, (t / duration) * _pacing_factor(pacing) * speed_factor))
         if motion == "pan":
             return int(max_x * (.06 + .88 * progress)), int(max_y * (.46 + .08 * progress))
         if motion == "scan":
@@ -413,6 +510,16 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
     def make_frame(t):
         x, y = crop_origin(t)
         frame = source.crop((x, y, x + width, y + height))
+
+        transition = _scene_attr(scene, "transition", "cinematic_cut")
+        if transition in {"flash_fade", "light_sweep"} and t < min(.22, duration * .18):
+            intensity = 1 - (t / min(.22, duration * .18))
+            white = Image.new("RGB", (width, height), (255, 255, 255))
+            frame = Image.blend(frame, white, intensity * .22)
+
+        if _scene_attr(scene, "blur_style", "cinematic_depth") == "motion_blur" and t < duration * .18:
+            frame = frame.filter(ImageFilter.GaussianBlur(radius=1.1))
+
         return np.array(frame)
 
     return VideoClip(frame_function=make_frame, duration=duration)
@@ -444,7 +551,7 @@ def render_storyboard(
     for index, scene in enumerate(storyboard.scenes, start=1):
         if on_progress:
             progress = 18 + int((index - 1) / len(storyboard.scenes) * 58)
-            on_progress(progress, f"Sto preparando la scena {index} di {len(storyboard.scenes)}...")
+            on_progress(progress, f"Sto preparando scena {index}: motion, glow e typography...")
 
         scene_path = work_dir / f"scene_{index}.png"
         _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
@@ -468,7 +575,7 @@ def render_storyboard(
 
     if voice_enabled:
         if on_progress:
-            on_progress(90, "Sto generando il voice-over scena per scena...")
+            on_progress(90, "Sto generando voice-over con pause cinematiche...")
 
         offset = 0.0
         for index, scene in enumerate(storyboard.scenes, start=1):
@@ -481,12 +588,15 @@ def render_storyboard(
                 rate=voice_rate,
             )
 
+            pause_before = float(_scene_attr(scene, "voice_pause_before", 0.08))
+            pause_after = float(_scene_attr(scene, "voice_pause_after", 0.15))
+
             if generated_path:
                 voice_clip = AudioFileClip(str(generated_path)).with_volume_scaled(voice_volume)
-                max_voice_duration = max(.4, scene.duration_seconds - .15)
+                max_voice_duration = max(.4, scene.duration_seconds - pause_before - pause_after)
                 if voice_clip.duration > max_voice_duration:
                     voice_clip = voice_clip.subclipped(0, max_voice_duration)
-                voice_clip = voice_clip.with_start(offset + .08)
+                voice_clip = voice_clip.with_start(offset + pause_before)
                 audio_tracks.append(voice_clip)
                 audio_clips_to_close.append(voice_clip)
 
@@ -518,4 +628,3 @@ def render_storyboard(
         clip.close()
 
     return filename, output_path
-
