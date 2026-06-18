@@ -686,3 +686,46 @@ bindDashboardEnterpriseActions();
 
 // Studio OS starts from the dashboard, not from the editor.
 openDashboardView();
+
+
+/* ==============================
+   MatchIQ Studio V3.0 Workspace micro-interactions
+   ============================== */
+function animateNumberText(element, target, suffix = "") {
+  if (!element) return;
+  const finalValue = Number(String(target).replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(finalValue)) return;
+  const start = Math.max(0, finalValue - 8);
+  const startTime = performance.now();
+  const duration = 550;
+
+  function tick(now) {
+    const progress = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    element.textContent = `${Math.round(start + (finalValue - start) * eased)}${suffix}`;
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function pulseEditorWorkspace() {
+  const shell = document.getElementById("studioEditorShell");
+  if (!shell) return;
+  shell.classList.remove("workspace-pulse");
+  void shell.offsetWidth;
+  shell.classList.add("workspace-pulse");
+}
+
+const originalOpenEditorView = typeof openEditorView === "function" ? openEditorView : null;
+if (originalOpenEditorView) {
+  openEditorView = function(id = "project") {
+    originalOpenEditorView(id);
+    pulseEditorWorkspace();
+  };
+}
+
+window.addEventListener("load", () => {
+  animateNumberText(document.getElementById("hookScore"), document.getElementById("hookScore")?.textContent || 96);
+  animateNumberText(document.getElementById("creativeScoreMini"), 96, "%");
+});
