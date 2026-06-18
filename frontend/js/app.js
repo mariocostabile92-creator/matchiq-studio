@@ -5,6 +5,11 @@ const engineStatus = document.getElementById("engineStatus");
 const resultBox = document.getElementById("resultBox");
 const reelVideo = document.getElementById("reelVideo");
 const downloadLink = document.getElementById("downloadLink");
+const renderStationBtn = document.getElementById("renderStationBtn");
+const renderProgressBar = document.getElementById("renderProgressBar");
+const renderProgressValue = document.getElementById("renderProgressValue");
+const renderPhaseLabel = document.getElementById("renderPhaseLabel");
+const renderProgressText = document.getElementById("renderProgressText");
 const timelineList = document.getElementById("timelineList");
 
 const previewTitle = document.getElementById("previewTitle");
@@ -57,6 +62,35 @@ function setStatus(message, engineMessage = message) {
   statusBox.textContent = message;
   engineStatus.textContent = engineMessage;
 }
+function updateRenderStation(progress = 0, phase = "Pronto", message = "") {
+  const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
+  if (renderProgressBar) renderProgressBar.style.width = `${safeProgress}%`;
+  if (renderProgressValue) renderProgressValue.textContent = `${Math.round(safeProgress)}%`;
+  if (renderPhaseLabel) renderPhaseLabel.textContent = phase;
+  if (renderProgressText && message) renderProgressText.textContent = message;
+
+  const steps = [
+    ["storyboard", 12],
+    ["voice", 32],
+    ["motion", 52],
+    ["encoding", 76],
+    ["export", 96],
+  ];
+
+  steps.forEach(([name, threshold]) => {
+    const step = document.querySelector(`[data-render-step="${name}"]`);
+    if (!step) return;
+    const small = step.querySelector("small");
+    step.classList.toggle("is-done", safeProgress >= threshold);
+    step.classList.toggle("is-active", safeProgress < threshold && safeProgress >= Math.max(0, threshold - 24));
+    if (small) {
+      if (safeProgress >= threshold) small.textContent = "Completato";
+      else if (safeProgress >= Math.max(0, threshold - 24)) small.textContent = "In corso";
+      else small.textContent = "In attesa";
+    }
+  });
+}
+
 
 function getAudioSettings() {
   return {
@@ -407,11 +441,13 @@ function updatePreview() {
 function setGenerating(isGenerating) {
   generateBtn.disabled = isGenerating;
   generateTopBtn.disabled = isGenerating;
+  if (renderStationBtn) renderStationBtn.disabled = isGenerating;
 }
 
 async function pollReel(jobId) {
   const data = await getReelStatus(jobId);
   setStatus(`${data.message} (${data.progress}%)`, `${data.progress}%`);
+  updateRenderStation(data.progress, data.message || "Rendering MP4", `MatchIQ Studio sta producendo il video. Stato: ${data.message || "in corso"}.`);
 
   if (data.status === "done") {
     clearInterval(pollTimer);
@@ -420,6 +456,8 @@ async function pollReel(jobId) {
     reelVideo.src = data.render_url;
     downloadLink.href = data.render_url;
     downloadLink.setAttribute("download", data.filename || "MatchIQ Studio-reel.mp4");
+    downloadLink.classList.remove("hidden");
+    updateRenderStation(100, "Export completato", "Render completato. Puoi vedere l'anteprima o scaricare il file MP4.");
 
     resultBox.classList.remove("hidden");
     setGenerating(false);
@@ -440,6 +478,8 @@ async function generateReel() {
   try {
     setGenerating(true);
     resultBox.classList.add("hidden");
+    downloadLink?.classList.add("hidden");
+    updateRenderStation(8, "Storyboard", "Creo storyboard, struttura narrativa e direzione creativa.");
     setStatus("Creo storyboard e direzione creativa...", "Storyboard");
 
     if (pollTimer) {
@@ -456,6 +496,7 @@ async function generateReel() {
       updatePreviewFromScene();
     }
 
+    updateRenderStation(34, "Voice-over e motion", "Storyboard pronto. Preparo voice-over, scene e movimento.");
     setStatus("Storyboard pronto. Avvio render MP4 draft...", "Render");
 
     const data = await renderStoryboard({
@@ -466,6 +507,7 @@ async function generateReel() {
       ...getAudioSettings(),
     });
 
+    updateRenderStation(58, "Render avviato", "Generazione avviata. MatchIQ Studio sta lavorando su motion, encoding ed export.");
     setStatus("Generazione avviata. MatchIQ Studio sta lavorando in background...", "In corso");
 
     pollTimer = setInterval(() => {
@@ -481,6 +523,7 @@ async function generateReel() {
     await pollReel(data.job_id);
   } catch (error) {
     console.error(error);
+    updateRenderStation(0, "Errore render", error.message || "Errore durante la generazione.");
     setStatus(`Errore: ${error.message}`, "Errore");
     setGenerating(false);
   }
@@ -533,10 +576,12 @@ clearSceneImageBtn?.addEventListener("click", clearSelectedSceneImage);
 
 generateBtn.addEventListener("click", generateReel);
 generateTopBtn.addEventListener("click", generateReel);
+renderStationBtn?.addEventListener("click", generateReel);
 
 registerServiceWorker();
 loadMediaAssets();
 updatePreview();
+updateRenderStation(0, "Pronto per il render", "Quando premi Crea MP4, MatchIQ Studio mostrerà lo stato della produzione in tempo reale.");
 
 /* ==============================
    MatchIQ Studio V2.3 Dashboard helpers

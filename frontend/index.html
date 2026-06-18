@@ -41,7 +41,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V3.0</span>
+        <span>Studio V3.1</span>
         <strong>Workspace Editor</strong>
         <p>Preview centrale, timeline professionale, inspector scena, media library e render MP4.</p>
       </div>
@@ -64,7 +64,7 @@
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V3.0 Workspace</span>
+          <span class="hero-badge">Studio V3.1 Render Flow</span>
           <h2>Bentornato, Mario.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
@@ -445,15 +445,49 @@
         </article>
       </section>
 
-      <section class="panel result-panel hidden" id="resultBox">
-        <div class="panel-heading" id="render">
+      <section class="panel render-station" id="render" aria-label="Render Station MatchIQ Studio">
+        <div class="panel-heading render-heading">
           <div>
-            <p class="eyebrow">Render completato</p>
-            <h2>Anteprima MP4</h2>
+            <p class="eyebrow">Render Station</p>
+            <h2>Produzione MP4</h2>
+            <p class="render-subtitle">Segui ogni fase: storyboard, voice-over, motion, encoding ed export finale.</p>
           </div>
-          <a id="downloadLink" class="ghost-btn" download>Scarica MP4</a>
+          <div class="render-actions">
+            <button class="primary-btn small-btn" id="renderStationBtn" type="button">Avvia render</button>
+            <a id="downloadLink" class="ghost-btn small-btn hidden" download>Scarica MP4</a>
+          </div>
         </div>
-        <video id="reelVideo" controls playsinline></video>
+
+        <div class="render-dashboard">
+          <div class="render-progress-card">
+            <div class="render-progress-top">
+              <span id="renderPhaseLabel">Pronto per il render</span>
+              <strong id="renderProgressValue">0%</strong>
+            </div>
+            <div class="render-progress-track" aria-hidden="true">
+              <span id="renderProgressBar"></span>
+            </div>
+            <p id="renderProgressText">Quando premi Crea MP4, MatchIQ Studio mostrerà lo stato della produzione in tempo reale.</p>
+          </div>
+
+          <div class="render-steps" aria-label="Fasi di produzione">
+            <div class="render-step" data-render-step="storyboard"><span>01</span><b>Storyboard</b><small>In attesa</small></div>
+            <div class="render-step" data-render-step="voice"><span>02</span><b>Voice-over</b><small>In attesa</small></div>
+            <div class="render-step" data-render-step="motion"><span>03</span><b>Motion</b><small>In attesa</small></div>
+            <div class="render-step" data-render-step="encoding"><span>04</span><b>Encoding</b><small>In attesa</small></div>
+            <div class="render-step" data-render-step="export"><span>05</span><b>Export</b><small>In attesa</small></div>
+          </div>
+        </div>
+
+        <div class="result-panel hidden" id="resultBox">
+          <div class="render-video-head">
+            <div>
+              <p class="eyebrow">Render completato</p>
+              <h2>Anteprima finale</h2>
+            </div>
+          </div>
+          <video id="reelVideo" controls playsinline></video>
+        </div>
       </section>
       </section>
     </section>
@@ -467,7 +501,7 @@
     <a href="#render" data-nav-target="render"><span>⬢</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=30"></script>
-  <script src="/js/app.js?v=30"></script>
+  <script src="/js/api.js?v=31"></script>
+  <script src="/js/app.js?v=31"></script>
 </body>
 </html>

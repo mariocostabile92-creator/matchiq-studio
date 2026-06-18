@@ -2030,3 +2030,157 @@ body.studio-editor-open .result-panel:not(.hidden)::before{
 }
 
 .workspace-pulse{animation:studioFadeUp .35s ease both;}
+
+
+/* ==============================
+   MatchIQ Studio V3.1 Render Station
+   ============================== */
+.render-station{
+  max-width:1500px;
+  margin:20px auto 0;
+  border-color:rgba(120,255,63,.18);
+  background:
+    radial-gradient(circle at top right, rgba(120,255,63,.10), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(29,155,255,.12), transparent 38%),
+    linear-gradient(180deg,var(--surface),var(--surface-2));
+}
+.render-heading{
+  align-items:center;
+}
+.render-subtitle{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.45;
+}
+.render-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.render-dashboard{
+  display:grid;
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:16px;
+}
+.render-progress-card{
+  min-height:190px;
+  padding:20px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:rgba(255,255,255,.04);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.render-progress-top{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:18px;
+}
+.render-progress-top span{
+  color:var(--soft);
+  font-weight:900;
+  font-size:15px;
+}
+.render-progress-top strong{
+  font-size:42px;
+  line-height:.9;
+  color:var(--accent);
+  text-shadow:0 0 24px rgba(120,255,63,.18);
+}
+.render-progress-track{
+  height:14px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(255,255,255,.08);
+  border:1px solid var(--line);
+}
+.render-progress-track span{
+  display:block;
+  width:0%;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  box-shadow:0 0 22px rgba(120,255,63,.28);
+  transition:width .35s ease;
+}
+.render-progress-card p{
+  margin:16px 0 0;
+  color:var(--muted);
+  line-height:1.45;
+}
+.render-steps{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+.render-step{
+  min-height:150px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:rgba(255,255,255,.035);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  transition:.22s ease;
+}
+.render-step span{
+  color:var(--accent);
+  font-size:11px;
+  font-weight:900;
+}
+.render-step b{
+  display:block;
+  font-size:15px;
+  line-height:1.15;
+}
+.render-step small{
+  color:var(--muted);
+  font-weight:800;
+}
+.render-step.is-active{
+  border-color:rgba(120,255,63,.45);
+  background:rgba(120,255,63,.08);
+  transform:translateY(-3px);
+  box-shadow:0 18px 44px rgba(0,0,0,.24);
+}
+.render-step.is-done{
+  border-color:rgba(120,255,63,.32);
+}
+.render-step.is-done small{
+  color:var(--accent);
+}
+.render-video-head{
+  margin:20px 0 14px;
+}
+.render-station video{
+  max-height:680px;
+}
+@media (max-width:1120px){
+  .render-dashboard,
+  .render-steps{
+    grid-template-columns:1fr;
+  }
+  .render-step{
+    min-height:auto;
+    gap:8px;
+  }
+}
+@media (max-width:820px){
+  .render-heading{
+    align-items:flex-start;
+  }
+  .render-actions,
+  .render-actions .primary-btn,
+  .render-actions .ghost-btn{
+    width:100%;
+  }
+  .render-progress-top strong{
+    font-size:34px;
+  }
+}
