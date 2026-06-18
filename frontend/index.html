@@ -41,7 +41,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V4.0</span>
+        <span>Studio V4.1</span>
         <strong>Hook Engine AI</strong>
         <p>Preview centrale, timeline professionale, inspector scena, media library e render MP4.</p>
       </div>
@@ -64,7 +64,7 @@
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V4.0 Hook Engine AI</span>
+          <span class="hero-badge">Studio V4.1 Hook + Media Fix</span>
           <h2>Bentornato, Mario.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
@@ -352,6 +352,28 @@
           <ol class="timeline-list" id="timelineList"></ol>
         </article>
 
+        <article class="panel" id="media">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Media Library</p>
+              <h2>Asset pronti</h2>
+              <p class="render-subtitle">Carica asset e distribuiscili automaticamente sulle scene.</p>
+            </div>
+          </div>
+          <div class="media-upload">
+            <input id="mediaUploadInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            <div class="media-actions">
+              <button class="ghost-btn small-btn" id="autoAssignMediaBtn" type="button">Distribuisci nelle scene</button>
+              <button class="ghost-btn small-btn" id="clearSceneImageBtn" type="button">Pulisci scena</button>
+            </div>
+            <span id="mediaUploadStatus">Carica immagini reali per usarle nelle scene.</span>
+          </div>
+          <div class="asset-grid" id="mediaAssetGrid">
+            <div><span></span><b>Nessuna immagine</b><small>Carica il primo asset</small></div>
+          </div>
+        </article>
+      </section>
+
         <article class="panel scene-editor-panel" id="sceneEditor">
           <div class="panel-heading">
             <div>
@@ -424,27 +446,6 @@
           </div>
         </article>
 
-        <article class="panel" id="media">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Media Library</p>
-              <h2>Asset pronti</h2>
-            </div>
-          </div>
-          <div class="media-upload">
-            <input id="mediaUploadInput" type="file" accept="image/png,image/jpeg,image/webp" />
-            <div class="media-actions">
-              <button class="ghost-btn small-btn" id="autoAssignMediaBtn" type="button">Distribuisci nelle scene</button>
-              <button class="ghost-btn small-btn" id="clearSceneImageBtn" type="button">Pulisci scena</button>
-            </div>
-            <span id="mediaUploadStatus">Carica immagini reali per usarle nelle scene.</span>
-          </div>
-          <div class="asset-grid" id="mediaAssetGrid">
-            <div><span></span><b>Nessuna immagine</b><small>Carica il primo asset</small></div>
-          </div>
-        </article>
-      </section>
-
       <section class="panel render-station" id="render" aria-label="Render Station MatchIQ Studio">
         <div class="panel-heading render-heading">
           <div>
@@ -501,8 +502,8 @@
     <a href="#render" data-nav-target="render"><span>⬢</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=40"></script>
-  <script src="/js/app.js?v=40"></script>
-  <script src="/js/hook-engine.js?v=40"></script>
+  <script src="/js/api.js?v=41"></script>
+  <script src="/js/app.js?v=41"></script>
+  <script src="/js/hook-engine.js?v=41"></script>
 </body>
 </html>
