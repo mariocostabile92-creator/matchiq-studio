@@ -30,12 +30,12 @@
       </div>
 
       <nav class="nav-list">
-        <a class="active" href="#dashboard">Dashboard</a>
-        <a href="#project">Crea Reel</a>
-        <a href="#timeline">Timeline</a>
-        <a href="#brand">Brand Memory</a>
-        <a href="#media">Media Library</a>
-        <a href="#render">Render</a>
+        <a class="active" href="#dashboard" data-nav-target="dashboard">Dashboard</a>
+        <a href="#project" data-nav-target="project">Editor</a>
+        <a href="#timeline" data-nav-target="timeline">Timeline</a>
+        <a href="#brand" data-nav-target="brand">Brand Memory</a>
+        <a href="#media" data-nav-target="media">Media Library</a>
+        <a href="#render" data-nav-target="render">Render</a>
       </nav>
 
       <div class="phase-box">
@@ -46,7 +46,7 @@
     </aside>
 
     <section class="workspace">
-      <header class="topbar topbar-v24" id="dashboard">
+      <header class="topbar topbar-v24 studio-dashboard-view" id="dashboard">
         <div>
           <p class="eyebrow">MatchIQ Studio / Command Center</p>
           <h1>Centro creativo AI per contenuti verticali</h1>
@@ -60,7 +60,7 @@
         </div>
       </header>
 
-      <section class="studio-hero studio-hero-v24" aria-label="Dashboard Premium MatchIQ Studio">
+      <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
           <span class="hero-badge">Studio V2.4 Enterprise</span>
           <h2>Bentornato, Mario.</h2>
@@ -111,7 +111,7 @@
         </div>
       </section>
 
-      <section class="quick-grid" aria-label="Azioni principali">
+      <section class="quick-grid studio-dashboard-view" aria-label="Azioni principali">
         <button class="quick-card" type="button" data-scroll-target="project">
           <span>01</span>
           <strong>Crea Reel</strong>
@@ -134,7 +134,7 @@
         </button>
       </section>
 
-      <section class="enterprise-grid enterprise-grid-v24" aria-label="Dashboard operativa MatchIQ Studio">
+      <section class="enterprise-grid enterprise-grid-v24 studio-dashboard-view" aria-label="Dashboard operativa MatchIQ Studio">
         <article class="enterprise-card enterprise-main">
           <div class="panel-heading compact-heading">
             <div>
@@ -185,7 +185,7 @@
         </article>
       </section>
 
-      <section class="metrics-grid" aria-label="Stato del workspace">
+      <section class="metrics-grid studio-dashboard-view" aria-label="Stato del workspace">
         <article>
           <span>Progetti attivi</span>
           <strong>4</strong>
@@ -207,6 +207,16 @@
           <small id="engineStatus">In attesa</small>
         </article>
       </section>
+
+      <section class="studio-editor-shell hidden" id="studioEditorShell" aria-label="Editor MatchIQ Studio">
+        <div class="editor-launch-header">
+          <div>
+            <p class="eyebrow">Editor Workspace</p>
+            <h2>Founder Reel Studio</h2>
+            <p>Modifica brief, scene, media, voice-over e render MP4 in un workflow dedicato.</p>
+          </div>
+          <button class="ghost-btn" id="backToDashboardBtn" type="button">← Torna alla Dashboard</button>
+        </div>
 
       <section class="main-grid">
         <section class="panel project-panel" id="project">
@@ -442,18 +452,19 @@
         </div>
         <video id="reelVideo" controls playsinline></video>
       </section>
+      </section>
     </section>
   </main>
 
   <nav class="mobile-bottom-nav" aria-label="Navigazione rapida mobile">
-    <a href="#dashboard">Home</a>
-    <a href="#project">Reel</a>
-    <a href="#timeline">Scene</a>
-    <a href="#media">Media</a>
-    <a href="#render">Render</a>
+    <a href="#dashboard" data-nav-target="dashboard">Home</a>
+    <a href="#project" data-nav-target="project">Reel</a>
+    <a href="#timeline" data-nav-target="timeline">Scene</a>
+    <a href="#media" data-nav-target="media">Media</a>
+    <a href="#render" data-nav-target="render">Render</a>
   </nav>
 
-  <script src="/js/api.js?v=21"></script>
-  <script src="/js/app.js?v=21"></script>
+  <script src="/js/api.js?v=22"></script>
+  <script src="/js/app.js?v=22"></script>
 </body>
 </html>

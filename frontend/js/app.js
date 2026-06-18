@@ -541,10 +541,37 @@ updatePreview();
 /* ==============================
    MatchIQ Studio V2.3 Dashboard helpers
    ============================== */
+function setActiveNavigation(id) {
+  document.querySelectorAll("[data-nav-target]").forEach((link) => {
+    link.classList.toggle("active", link.dataset.navTarget === id);
+  });
+
+  document.querySelectorAll(".nav-list a").forEach((link) => {
+    const hrefId = (link.getAttribute("href") || "").replace("#", "");
+    link.classList.toggle("active", hrefId === id);
+  });
+}
+
+function openDashboardView() {
+  document.body.classList.remove("studio-editor-open");
+  setActiveNavigation("dashboard");
+  document.getElementById("dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openEditorView(id = "project") {
+  document.body.classList.add("studio-editor-open");
+  setActiveNavigation(id);
+  const target = document.getElementById(id) || document.getElementById("project");
+  target?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function scrollToStudioSection(id) {
-  const target = document.getElementById(id);
-  if (!target) return;
-  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (id === "dashboard") {
+    openDashboardView();
+    return;
+  }
+
+  openEditorView(id);
 }
 
 function applyStudioTemplate(templateName) {
@@ -590,6 +617,15 @@ function applyStudioTemplate(templateName) {
 }
 
 function bindDashboardEnterpriseActions() {
+  document.querySelectorAll("[data-nav-target]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      scrollToStudioSection(link.dataset.navTarget);
+    });
+  });
+
+  document.getElementById("backToDashboardBtn")?.addEventListener("click", openDashboardView);
+
   document.querySelectorAll("[data-scroll-target]").forEach((button) => {
     button.addEventListener("click", () => scrollToStudioSection(button.dataset.scrollTarget));
   });
@@ -638,3 +674,7 @@ function bindDashboardEnterpriseActions() {
 }
 
 bindDashboardEnterpriseActions();
+
+
+// Studio OS starts from the dashboard, not from the editor.
+openDashboardView();
