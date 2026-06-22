@@ -2184,3 +2184,156 @@ body.studio-editor-open .result-panel:not(.hidden)::before{
     font-size:34px;
   }
 }
+
+
+/* ==============================
+   MatchIQ Studio V4.3 Easy Creator
+   ============================== */
+.easy-creator-panel{
+  max-width:1500px;
+  margin:0 auto 20px;
+  padding:22px;
+  border:1px solid rgba(120,255,63,.24);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at top left, rgba(29,155,255,.16), transparent 34%),
+    linear-gradient(180deg, rgba(7,20,38,.98), rgba(11,27,51,.88));
+}
+.easy-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:18px;
+}
+.easy-head h2{
+  margin:8px 0;
+  font-size:30px;
+  letter-spacing:-.7px;
+}
+.easy-head p,
+.creative-director-box p,
+.advanced-settings p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.45;
+}
+.easy-flow-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.creative-director-box{
+  margin-top:14px;
+  padding:16px;
+  border:1px solid rgba(29,155,255,.24);
+  border-radius:18px;
+  background:rgba(255,255,255,.04);
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+}
+.creative-director-box span{
+  color:var(--accent);
+  font-size:12px;
+  font-weight:950;
+  text-transform:uppercase;
+}
+.creative-director-box strong{
+  display:block;
+  margin:7px 0;
+  font-size:20px;
+}
+.director-actions,
+.scene-card-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.preset-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.preset-card{
+  min-height:104px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(255,255,255,.035);
+  color:var(--text);
+  text-align:left;
+}
+.preset-card.is-selected{
+  border-color:rgba(120,255,63,.52);
+  background:rgba(120,255,63,.10);
+}
+.preset-card span{
+  display:block;
+  color:var(--accent);
+  font-size:11px;
+  font-weight:950;
+  text-transform:uppercase;
+}
+.preset-card strong{
+  display:block;
+  margin:8px 0 4px;
+}
+.preset-card small{
+  color:var(--muted);
+  line-height:1.35;
+}
+.advanced-settings{
+  margin-top:12px;
+  border-top:1px solid rgba(255,255,255,.08);
+  padding-top:12px;
+}
+.advanced-settings summary{
+  cursor:pointer;
+  color:var(--soft);
+  font-weight:900;
+}
+.scene-card-actions{
+  grid-column:1 / -1;
+  margin-top:4px;
+}
+.scene-card-actions button{
+  min-height:30px;
+  padding:0 9px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:999px;
+  color:var(--soft);
+  background:rgba(255,255,255,.045);
+  font-size:11px;
+  font-weight:900;
+}
+.scene-card-actions button:hover{
+  border-color:rgba(120,255,63,.42);
+  color:#fff;
+}
+body.studio-editor-open .timeline-list li{
+  min-height:164px;
+}
+@media (max-width:1120px){
+  .easy-flow-grid,
+  .preset-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .creative-director-box,
+  .easy-head{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+}
+@media (max-width:720px){
+  .easy-flow-grid,
+  .preset-grid{
+    grid-template-columns:1fr;
+  }
+  .easy-creator-panel{
+    padding:16px;
+    border-radius:18px;
+  }
+}

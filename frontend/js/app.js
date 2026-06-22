@@ -47,6 +47,14 @@ const mediaUploadStatus = document.getElementById("mediaUploadStatus");
 const mediaAssetGrid = document.getElementById("mediaAssetGrid");
 const autoAssignMediaBtn = document.getElementById("autoAssignMediaBtn");
 const clearSceneImageBtn = document.getElementById("clearSceneImageBtn");
+const easyCreateBtn = document.getElementById("easyCreateBtn");
+const easyBrand = document.getElementById("easyBrand");
+const easyGoal = document.getElementById("easyGoal");
+const easyTemplate = document.getElementById("easyTemplate");
+const easyIdea = document.getElementById("easyIdea");
+const directorHook = document.getElementById("directorHook");
+const directorPlan = document.getElementById("directorPlan");
+
 
 let pollTimer = null;
 let currentStoryboard = null;
@@ -271,12 +279,52 @@ function updateTimeline(storyboard = currentStoryboard) {
       <span>${String(index + 1).padStart(2, "0")}</span>
       <p><b>${sceneItem.title}</b> - ${sceneItem.subtitle}</p>
       <small>${sceneItem.image_url ? "IMG" : ""} ${Math.max(2, Math.round(sceneItem.duration_seconds || 3))}s</small>
+      <div class="scene-card-actions">
+        <button type="button" data-scene-action="regen" data-scene-index="${index}">Rigenera</button>
+        <button type="button" data-scene-action="image" data-scene-index="${index}">Immagine</button>
+        <button type="button" data-scene-action="text" data-scene-index="${index}">Testo</button>
+        <button type="button" data-scene-action="preview" data-scene-index="${index}">Preview</button>
+      </div>
     </li>
   `).join("");
 
   timelineList.querySelectorAll("li").forEach((item) => {
-    item.addEventListener("click", () => selectScene(Number(item.dataset.sceneIndex)));
+    item.addEventListener("click", (event) => {
+      if (event.target.closest("[data-scene-action]")) return;
+      selectScene(Number(item.dataset.sceneIndex));
+    });
   });
+
+  timelineList.querySelectorAll("[data-scene-action]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      handleSceneQuickAction(button.dataset.sceneAction, Number(button.dataset.sceneIndex));
+    });
+  });
+}
+
+
+function handleSceneQuickAction(action, index) {
+  selectScene(index);
+  if (action === "regen") {
+    regenerateSelectedScene();
+    return;
+  }
+  if (action === "image") {
+    scrollToStudioSection("media");
+    setStatus("Scegli una immagine e verra assegnata alla scena selezionata.", "Media");
+    return;
+  }
+  if (action === "text") {
+    sceneSubtitleInput?.focus();
+    setStatus("Modifica il testo della scena. La preview si aggiorna subito.", "Testo");
+    return;
+  }
+  if (action === "preview") {
+    updatePreviewFromScene();
+    document.querySelector(".phone-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setStatus("Preview scena aggiornata.", "Preview");
+  }
 }
 
 function updatePreviewFromScene() {
@@ -584,7 +632,7 @@ updatePreview();
 updateRenderStation(0, "Pronto per il render", "Quando premi Crea MP4, MatchIQ Studio mostrerà lo stato della produzione in tempo reale.");
 
 /* ==============================
-   MatchIQ Studio V2.3 Dashboard helpers
+   MatchIQ Studio V4.3 Easy Creator helpers
    ============================== */
 function setActiveNavigation(id) {
   document.body.dataset.activeView = id;
@@ -629,9 +677,27 @@ function applyStudioTemplate(templateName) {
       brandName: "MatchIQ Studio",
       title: "Non sto costruendo un software. Sto costruendo una visione.",
       topic: "Founder Story",
-      callToAction: "Il viaggio è appena iniziato",
+      callToAction: "Il viaggio e appena iniziato",
       tone: "cinematic",
       visualStyle: "auto",
+      pacing: "balanced",
+    },
+    product: {
+      brandName: "MatchIQ Studio",
+      title: "Il modo piu semplice per trasformare una idea in un reel pronto.",
+      topic: "Promo prodotto",
+      callToAction: "Prova MatchIQ Studio",
+      tone: "premium",
+      visualStyle: "editorial",
+      pacing: "balanced",
+    },
+    linkedin: {
+      brandName: "MatchIQ Studio",
+      title: "Non pubblicare di piu. Pubblica contenuti che fanno capire chi sei.",
+      topic: "Post LinkedIn trasformato in reel",
+      callToAction: "Racconta meglio il tuo brand",
+      tone: "startup",
+      visualStyle: "data",
       pacing: "balanced",
     },
     sport: {
@@ -646,14 +712,31 @@ function applyStudioTemplate(templateName) {
     sponsor: {
       brandName: "MatchIQ Studio",
       title: "Uno sponsor non compra spazio. Compra attenzione.",
-      topic: "Promo sponsor per società sportiva",
-      callToAction: "Dai più valore ai partner del club",
+      topic: "Promo sponsor per societa sportiva",
+      callToAction: "Dai piu valore ai partner del club",
       tone: "provocative",
       visualStyle: "editorial",
       pacing: "balanced",
     },
+    offer: {
+      brandName: "MatchIQ Studio",
+      title: "Questa offerta non deve solo essere vista. Deve essere capita subito.",
+      topic: "Offerta commerciale",
+      callToAction: "Scopri l'offerta",
+      tone: "provocative",
+      visualStyle: "auto",
+      pacing: "fast",
+    },
+    beforeAfter: {
+      brandName: "MatchIQ Studio",
+      title: "Prima perdevi ore. Ora parti da una idea e arrivi a un reel.",
+      topic: "Prima e dopo",
+      callToAction: "Crea il tuo prossimo reel",
+      tone: "cinematic",
+      visualStyle: "auto",
+      pacing: "balanced",
+    },
   };
-
   const template = templates[templateName] || templates.founder;
   Object.entries(template).forEach(([id, value]) => {
     const field = document.getElementById(id);
@@ -663,6 +746,59 @@ function applyStudioTemplate(templateName) {
   updatePreview();
   setStatus("Template caricato. Puoi modificarlo o creare il Reel MP4.", "Template");
   scrollToStudioSection("project");
+}
+
+
+function applyVoicePreset(preset) {
+  const presets = {
+    natural: { style: "studio", rate: -1, voice: .95, music: .04, mood: "Voce naturale, musica bassa." },
+    energetic: { style: "energetic", rate: 1, voice: 1, music: .045, mood: "Voce energica, ritmo piu veloce." },
+    premium: { style: "calm", rate: -2, voice: .95, music: .035, mood: "Voce premium, ritmo pulito." },
+    motivational: { style: "energetic", rate: 0, voice: 1, music: .04, mood: "Voce motivazionale, tono founder." },
+  };
+  const config = presets[preset] || presets.natural;
+  if (voiceEnabled) voiceEnabled.checked = true;
+  if (voiceStyle) voiceStyle.value = config.style;
+  if (voiceRate) voiceRate.value = config.rate;
+  if (voiceVolume) voiceVolume.value = config.voice;
+  if (musicVolume) musicVolume.value = config.music;
+  document.querySelectorAll("[data-voice-preset]").forEach((button) => {
+    button.classList.toggle("is-selected", button.dataset.voicePreset === preset);
+  });
+  setStatus(config.mood, "Preset");
+}
+
+function updateDirectorRecommendation(mood = "default") {
+  const brand = easyBrand?.value?.trim() || "MatchIQ Studio";
+  const goal = easyGoal?.value || "creare un reel";
+  const idea = easyIdea?.value?.trim() || "Una idea forte";
+  const moodMap = {
+    emotional: `${brand}: la storia che merita di essere vista.`,
+    bold: `Se il tuo reel non ferma lo scroll, non esiste.`,
+    pro: `${brand} trasforma una idea in un contenuto chiaro e professionale.`,
+    default: idea,
+  };
+  if (directorHook) directorHook.textContent = moodMap[mood] || moodMap.default;
+  if (directorPlan) {
+    directorPlan.textContent = `Obiettivo: ${goal}. Piano: hook forte, scena problema, scena soluzione, prova visiva, CTA finale.`;
+  }
+}
+
+function applyEasyCreator() {
+  const templateName = easyTemplate?.value || "founder";
+  applyStudioTemplate(templateName);
+
+  const brand = easyBrand?.value?.trim();
+  const idea = easyIdea?.value?.trim();
+  const goal = easyGoal?.value || "";
+  if (brand) document.getElementById("brandName").value = brand;
+  if (idea) document.getElementById("title").value = idea;
+  if (goal) document.getElementById("topic").value = goal;
+
+  updateDirectorRecommendation("default");
+  updatePreview();
+  scrollToStudioSection("timeline");
+  setStatus("Proposta creata. Puoi modificare ogni scena con i pulsanti semplici.", "Easy Creator");
 }
 
 function bindDashboardEnterpriseActions() {
@@ -702,6 +838,24 @@ function bindDashboardEnterpriseActions() {
 
   document.getElementById("quickTemplateSports")?.addEventListener("click", () => {
     applyStudioTemplate("sport");
+  });
+
+
+
+  easyCreateBtn?.addEventListener("click", applyEasyCreator);
+  [easyBrand, easyGoal, easyTemplate, easyIdea].forEach((input) => {
+    input?.addEventListener("input", () => updateDirectorRecommendation("default"));
+    input?.addEventListener("change", () => updateDirectorRecommendation("default"));
+  });
+  document.querySelectorAll("[data-director-mood]").forEach((button) => {
+    button.addEventListener("click", () => {
+      updateDirectorRecommendation(button.dataset.directorMood);
+      if (easyIdea && directorHook) easyIdea.value = directorHook.textContent;
+      setStatus("Creative Director aggiornato. Premi Crea proposta per applicarlo.", "AI Director");
+    });
+  });
+  document.querySelectorAll("[data-voice-preset]").forEach((button) => {
+    button.addEventListener("click", () => applyVoicePreset(button.dataset.voicePreset));
   });
 
   document.querySelectorAll("[data-suggestion]").forEach((button) => {

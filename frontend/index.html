@@ -42,7 +42,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V4.1</span>
+        <span>Studio V4.3</span>
         <strong>Hook Engine AI</strong>
         <p>Brief semplice, scene modificabili, immagini reali, voce, preview e render MP4.</p>
       </div>
@@ -65,7 +65,7 @@
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V4.2 Easy Creator</span>
+          <span class="hero-badge">Studio V4.3 Easy Creator</span>
           <h2>Bentornato, Mario.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
@@ -113,6 +113,85 @@
           </div>
         </div>
       </section>
+
+      <section class="easy-creator-panel studio-dashboard-view" id="easyCreator" aria-label="Crea Reel Guidato">
+        <div class="easy-head">
+          <div>
+            <p class="eyebrow">Easy Creator Mode</p>
+            <h2>Crea un reel senza sapere montare video</h2>
+            <p>Scrivi l'idea, scegli un obiettivo e lascia che MatchIQ Studio prepari hook, scene, ritmo, voce e stile.</p>
+          </div>
+          <button class="primary-btn" id="easyCreateBtn" type="button">Crea proposta</button>
+        </div>
+
+        <div class="easy-flow-grid">
+          <label>
+            Brand
+            <input id="easyBrand" value="MatchIQ Studio" />
+          </label>
+          <label>
+            Obiettivo
+            <select id="easyGoal">
+              <option value="raccontare una founder story">Raccontare una storia</option>
+              <option value="vendere un prodotto">Vendere un prodotto</option>
+              <option value="trovare nuovi sponsor">Trovare sponsor</option>
+              <option value="pubblicare su LinkedIn">Post LinkedIn</option>
+              <option value="promuovere una partita">Reel sportivo</option>
+              <option value="annunciare una offerta">Offerta</option>
+            </select>
+          </label>
+          <label>
+            Tipo reel
+            <select id="easyTemplate">
+              <option value="founder">Founder Story</option>
+              <option value="product">Promo prodotto</option>
+              <option value="linkedin">Post LinkedIn</option>
+              <option value="sport">Reel sportivo</option>
+              <option value="sponsor">Sponsor</option>
+              <option value="offer">Offerta</option>
+              <option value="beforeAfter">Prima / Dopo</option>
+            </select>
+          </label>
+          <label>
+            Idea
+            <input id="easyIdea" value="Non sto costruendo un software. Sto costruendo una visione." />
+          </label>
+        </div>
+
+        <div class="creative-director-box">
+          <div>
+            <span>AI Creative Director</span>
+            <strong id="directorHook">Hook consigliato pronto.</strong>
+            <p id="directorPlan">5 scene: apertura forte, contesto, trasformazione, prova visiva e CTA.</p>
+          </div>
+          <div class="director-actions">
+            <button class="ghost-btn small-btn" type="button" data-director-mood="emotional">Piu emozionale</button>
+            <button class="ghost-btn small-btn" type="button" data-director-mood="bold">Piu diretto</button>
+            <button class="ghost-btn small-btn" type="button" data-director-mood="pro">Piu professionale</button>
+          </div>
+        </div>
+
+        <div class="preset-grid" aria-label="Preset semplici">
+          <button class="preset-card is-selected" type="button" data-voice-preset="natural">
+            <span>Voce</span><strong>Naturale</strong><small>Chiara, umana, semplice.</small>
+          </button>
+          <button class="preset-card" type="button" data-voice-preset="energetic">
+            <span>Voce</span><strong>Energica</strong><small>Per reel piu dinamici.</small>
+          </button>
+          <button class="preset-card" type="button" data-voice-preset="premium">
+            <span>Voce</span><strong>Premium</strong><small>Lenta, pulita, autorevole.</small>
+          </button>
+          <button class="preset-card" type="button" data-voice-preset="motivational">
+            <span>Voce</span><strong>Motivazionale</strong><small>Founder story e lancio.</small>
+          </button>
+        </div>
+
+        <details class="advanced-settings">
+          <summary>Opzioni avanzate</summary>
+          <p>Usa l'editor completo per cambiare musica, ritmo, durata, singole scene e immagini.</p>
+        </details>
+      </section>
+
 
       <section class="quick-grid studio-dashboard-view" aria-label="Azioni principali">
         <button class="quick-card" type="button" data-scroll-target="project">
@@ -503,8 +582,8 @@
     <a href="#render" data-nav-target="render"><span>⬢</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=42"></script>
-  <script src="/js/app.js?v=42"></script>
-  <script src="/js/hook-engine.js?v=42"></script>
+  <script src="/js/api.js?v=43"></script>
+  <script src="/js/app.js?v=43"></script>
+  <script src="/js/hook-engine.js?v=43"></script>
 </body>
 </html>
