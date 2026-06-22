@@ -88,9 +88,9 @@ def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.I
     except OSError:
         return None
     image = ImageOps.fit(image, (width, height), method=Image.Resampling.LANCZOS, centering=(.5, .5))
-    image = ImageEnhance.Contrast(image).enhance(1.18)
-    image = ImageEnhance.Color(image).enhance(1.05)
-    return ImageEnhance.Brightness(image).enhance(.82)
+    image = ImageEnhance.Contrast(image).enhance(1.10)
+    image = ImageEnhance.Color(image).enhance(1.08)
+    return ImageEnhance.Brightness(image).enhance(1.03)
 
 
 def _background_gradient(width: int, height: int, top, bottom):
@@ -108,10 +108,10 @@ def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> I
     draw = ImageDraw.Draw(overlay)
     for y in range(height):
         ratio = y / height
-        alpha = int(20 + 135 * ratio)
+        alpha = int(8 + 72 * ratio)
         draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
-    draw.rectangle((0, 0, width, int(height * .20)), fill=(0, 0, 0, 72))
-    draw.rectangle((0, int(height * .68), width, height), fill=(0, 0, 0, 142))
+    draw.rectangle((0, 0, width, int(height * .20)), fill=(0, 0, 0, 42))
+    draw.rectangle((0, int(height * .68), width, height), fill=(0, 0, 0, 92))
     draw.line((int(width * .08), int(height * .16), int(width * .92), int(height * .16)), fill=(*accent, 210), width=4)
     return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 
@@ -219,14 +219,14 @@ def _draw_reel_text(draw, scene, scene_index: int, accent, width: int, height: i
 def _apply_cinematic_grade(img: Image.Image, scene, width: int, height: int) -> Image.Image:
     glow = _scene_attr(scene, "glow", "medium")
     grain = _scene_attr(scene, "grain", "subtle")
-    img = ImageEnhance.Contrast(img).enhance(1.14)
-    img = ImageEnhance.Color(img).enhance(1.06)
+    img = ImageEnhance.Contrast(img).enhance(1.09)
+    img = ImageEnhance.Color(img).enhance(1.08)
     if glow in {"medium", "strong"}:
         glow_layer = img.filter(ImageFilter.GaussianBlur(radius=12 if glow == "medium" else 18))
-        img = Image.blend(img, glow_layer, .10 if glow == "medium" else .16)
+        img = Image.blend(img, glow_layer, .06 if glow == "medium" else .10)
     if grain in {"subtle", "medium"}:
         rng = np.random.default_rng(seed=scene.index * 17)
-        noise_alpha = 9 if grain == "subtle" else 16
+        noise_alpha = 5 if grain == "subtle" else 10
         noise = rng.integers(0, 255, (height, width), dtype=np.uint8)
         noise_img = Image.fromarray(noise, "L").convert("RGBA")
         noise_img.putalpha(noise_alpha)
@@ -347,7 +347,7 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     if music_enabled:
         if on_progress:
             on_progress(88, "Sto aggiungendo musica e mix audio...")
-        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(music_volume, 0.08), mood=music_mood)
+        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(music_volume, 0.045), mood=music_mood)
         audio_tracks.append(music_audio)
         audio_clips_to_close.append(music_audio)
     if voice_enabled:

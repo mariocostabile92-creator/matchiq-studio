@@ -1,4 +1,4 @@
-const CACHE_NAME = "matchiq-studio-shell-v20";
+const CACHE_NAME = "matchiq-studio-shell-v42";
 
 const APP_SHELL = [
   "/",
@@ -12,8 +12,9 @@ const APP_SHELL = [
   "/assets/brand/matchiq-logo-official.png",
   "/assets/brand/matchiq-studio-primary.png",
   "/css/style.css",
-  "/js/api.js?v=20",
-  "/js/app.js?v=20"
+  "/js/api.js?v=42",
+  "/js/app.js?v=42",
+  "/js/hook-engine.js?v=42"
 ];
 
 self.addEventListener("install", (event) => {
@@ -45,7 +46,8 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/renders/") ||
-    url.pathname.startsWith("/media/")
+    url.pathname.startsWith("/media/") ||
+    url.pathname.startsWith("/uploads/")
   ) {
     event.respondWith(fetch(request));
     return;
