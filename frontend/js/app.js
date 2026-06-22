@@ -38,6 +38,7 @@ const voicePreviewStatus = document.getElementById("voicePreviewStatus");
 
 const musicEnabled = document.getElementById("musicEnabled");
 const musicVolume = document.getElementById("musicVolume");
+const musicMood = document.getElementById("musicMood");
 const voiceEnabled = document.getElementById("voiceEnabled");
 const voiceVolume = document.getElementById("voiceVolume");
 const voiceStyle = document.getElementById("voiceStyle");
@@ -197,6 +198,7 @@ function getAudioSettings() {
   return {
     music_enabled: Boolean(musicEnabled?.checked),
     music_volume: Number(musicVolume?.value || 0.14),
+    music_mood: musicMood?.value || "cinematic",
     voice_enabled: Boolean(voiceEnabled?.checked),
     voice_volume: Number(voiceVolume?.value || 0.95),
     voice_style: voiceStyle?.value || "studio",
@@ -701,7 +703,7 @@ sceneMotionPreset.addEventListener("change", () => {
   updatePreviewFromScene();
 });
 
-[musicEnabled, musicVolume, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
+[musicEnabled, musicVolume, musicMood, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
   input?.addEventListener("input", () => {
     const audioState = musicEnabled?.checked ? "Musica demo attiva a volume basso" : "Musica demo disattivata";
     const voiceState = voiceEnabled?.checked ? `Voice-over ${voiceStyle?.value || "studio"} attivo nell'MP4` : "Voice-over disattivato";
@@ -856,6 +858,7 @@ function applyVoicePreset(preset) {
   if (voiceRate) voiceRate.value = config.rate;
   if (voiceVolume) voiceVolume.value = config.voice;
   if (musicVolume) musicVolume.value = config.music;
+  if (musicMood) musicMood.value = preset === "motivational" ? "emotional" : preset === "energetic" ? "sport" : preset === "premium" ? "premium" : "cinematic";
   document.querySelectorAll("[data-voice-preset]").forEach((button) => {
     button.classList.toggle("is-selected", button.dataset.voicePreset === preset);
   });

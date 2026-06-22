@@ -5,119 +5,88 @@ from moviepy import AudioClip
 
 
 MOOD_PRESETS = {
-    "cinematic": {
-        "notes": (98, 147, 196, 247),
-        "kick": 0.72,
-        "pulse": 0.22,
-        "pad": 0.16,
-        "shimmer": 0.012,
-    },
-    "startup": {
-        "notes": (110, 165, 220, 330),
-        "kick": 0.58,
-        "pulse": 0.26,
-        "pad": 0.13,
-        "shimmer": 0.018,
-    },
-    "premium": {
-        "notes": (87, 130, 174, 261),
-        "kick": 0.42,
-        "pulse": 0.14,
-        "pad": 0.20,
-        "shimmer": 0.010,
-    },
-    "provocative": {
-        "notes": (98, 146, 196, 294),
-        "kick": 0.78,
-        "pulse": 0.30,
-        "pad": 0.12,
-        "shimmer": 0.016,
-    },
-    "sport": {
-        "notes": (110, 165, 220, 440),
-        "kick": 0.86,
-        "pulse": 0.34,
-        "pad": 0.10,
-        "shimmer": 0.020,
-    },
-    "emotional": {
-        "notes": (82, 123, 164, 246),
-        "kick": 0.26,
-        "pulse": 0.10,
-        "pad": 0.24,
-        "shimmer": 0.008,
-    },
+    "cinematic": {"root": 55, "third": 65.41, "fifth": 82.41, "top": 196, "bpm": 92, "drive": .55, "pad": .42},
+    "premium": {"root": 49, "third": 61.74, "fifth": 73.42, "top": 146.83, "bpm": 84, "drive": .32, "pad": .54},
+    "startup": {"root": 65.41, "third": 82.41, "fifth": 98, "top": 220, "bpm": 104, "drive": .48, "pad": .38},
+    "sport": {"root": 55, "third": 82.41, "fifth": 110, "top": 220, "bpm": 116, "drive": .70, "pad": .30},
+    "emotional": {"root": 43.65, "third": 55, "fifth": 65.41, "top": 164.81, "bpm": 78, "drive": .22, "pad": .58},
+    "provocative": {"root": 55, "third": 69.3, "fifth": 82.41, "top": 196, "bpm": 108, "drive": .64, "pad": .35},
 }
 
 
-def _as_stereo(signal):
+def _as_stereo(signal, pan=0.0):
     audio = np.asarray(signal, dtype=float)
-    if audio.ndim == 0:
-        return np.array([float(audio), float(audio)])
-    return np.column_stack((audio, audio))
+    left = audio * (1 - max(0, pan) * .25)
+    right = audio * (1 + min(0, pan) * .25)
+    return np.column_stack((left, right))
 
 
-def _pluck(time, note, offset, decay=5.2):
-    local = np.maximum(0, time - offset)
-    active = (time >= offset).astype(float)
-    envelope = np.exp(-decay * local) * active
-    tone = np.sin(2 * math.pi * note * local) + 0.22 * np.sin(2 * math.pi * note * 2 * local)
-    return tone * envelope
+def _sine(time, freq, amount=1.0):
+    return amount * np.sin(2 * math.pi * freq * time)
 
 
-def _soft_kick(time, bpm: float, strength: float):
+def _soft_clip(signal):
+    return np.tanh(signal * 1.35) * .82
+
+
+def _beat_envelope(time, bpm, width=.11):
     beat = 60.0 / bpm
     phase = np.mod(time, beat)
-    envelope = np.exp(-18 * phase)
-    low = np.sin(2 * math.pi * 58 * phase)
-    return strength * low * envelope
+    return np.exp(-phase / width)
 
 
-def _ducking_curve(time, duration: float):
-    """Keep music under voice: lower in the center of most scenes."""
+def _sidechain_curve(time, duration):
     scene_len = max(2.0, duration / 5)
     phase = np.mod(time, scene_len) / scene_len
-    # Quieter during likely voice-over window, fuller during transitions.
-    return np.where((phase > 0.12) & (phase < 0.78), 0.62, 0.98)
+    return np.where((phase > .18) & (phase < .76), .58, .96)
 
 
-def build_music_bed(tone: str, duration: float, volume: float = 0.06, mood: str | None = None):
-    """Create a cleaner placeholder music bed with automatic ducking.
-
-    This still is not licensed music, but it is less invasive, more modern and
-    designed to stay behind the voice-over.
-    """
-
-    selected = mood or tone or "cinematic"
+def build_music_bed(tone: str, duration: float, volume: float = 0.12, mood: str | None = None):
+    selected = (mood or tone or "cinematic").lower()
     preset = MOOD_PRESETS.get(selected, MOOD_PRESETS.get(tone, MOOD_PRESETS["cinematic"]))
-    notes = preset["notes"]
-
-    # Never let generated placeholder music dominate the voice.
-    safe_volume = max(0.0, min(0.20, volume))
-    bpm = 92 if selected in {"premium", "emotional"} else 112 if selected == "sport" else 104
+    bpm = preset["bpm"]
+    safe_volume = max(0.0, min(0.22, volume))
 
     def frame_function(t):
-        time = np.asarray(t)
-        phrase = np.zeros_like(time, dtype=float)
+        time = np.asarray(t, dtype=float)
+        fade_in = np.minimum(1.0, time / 1.3)
+        fade_out = np.minimum(1.0, np.maximum(0.0, (duration - time) / 1.6))
+        duck = _sidechain_curve(time, duration)
 
-        for step in range(int(duration * 1.5) + 6):
-            note = notes[step % len(notes)]
-            phrase += _pluck(time, note, step * 0.66, decay=5.8)
+        root = preset["root"]
+        third = preset["third"]
+        fifth = preset["fifth"]
+        top = preset["top"]
 
-        pad = (
-            preset["pad"] * np.sin(2 * math.pi * notes[0] / 2 * time)
-            + (preset["pad"] * 0.55) * np.sin(2 * math.pi * notes[1] / 2 * time)
-        )
-        pulse = preset["pulse"] * np.sin(2 * math.pi * notes[-1] / 4 * time)
-        shimmer = preset["shimmer"] * np.sin(2 * math.pi * notes[-1] * 2 * time)
-        kick = _soft_kick(time, bpm=bpm, strength=preset["kick"] * 0.11)
+        warm_pad = (
+            _sine(time, root, .48)
+            + _sine(time, third, .22)
+            + _sine(time, fifth, .20)
+            + _sine(time, root / 2, .28)
+        ) * preset["pad"]
 
-        signal = 0.22 * phrase + 1.18 * pad + 1.10 * pulse + shimmer + 1.35 * kick
+        slow_filter = .72 + .28 * np.sin(2 * math.pi * time / 7.5)
+        warm_pad *= slow_filter
 
-        fade_in = np.minimum(1.0, time / 1.0)
-        fade_out = np.minimum(1.0, np.maximum(0.0, (duration - time) / 1.2))
-        ducking = _ducking_curve(time, duration)
+        beat = _beat_envelope(time, bpm, width=.075)
+        sub = np.sin(2 * math.pi * 46 * np.mod(time, 60 / bpm)) * beat * preset["drive"] * .18
 
-        return _as_stereo(safe_volume * signal * fade_in * fade_out * ducking)
+        hat_phase = np.mod(time, (60 / bpm) / 2)
+        soft_hat = np.exp(-hat_phase / .025) * .018 * np.sin(2 * math.pi * 8200 * hat_phase)
+
+        arp = np.zeros_like(time)
+        step_len = (60 / bpm) / 2
+        notes = [root * 2, third * 2, fifth * 2, top]
+        for i, note in enumerate(notes):
+            local = np.maximum(0, time - i * step_len)
+            phase = np.mod(local, step_len * len(notes))
+            active = phase < step_len
+            env = np.exp(-np.mod(phase, step_len) / .18) * active
+            arp += np.sin(2 * math.pi * note * np.mod(phase, step_len)) * env * .045
+
+        riser = .018 * np.sin(2 * math.pi * (180 + 40 * np.sin(time * .22)) * time)
+        signal = warm_pad + sub + soft_hat + arp + riser
+        signal = _soft_clip(signal) * fade_in * fade_out * duck * safe_volume
+        return _as_stereo(signal, pan=.08 * np.sin(time / 3))
 
     return AudioClip(frame_function, duration=duration, fps=44100)

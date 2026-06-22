@@ -132,37 +132,29 @@ def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> I
         draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
     draw.rectangle((0, 0, width, int(height * .20)), fill=(0, 0, 0, 42))
     draw.rectangle((0, int(height * .68), width, height), fill=(0, 0, 0, 62))
-    draw.line((int(width * .08), int(height * .16), int(width * .92), int(height * .16)), fill=(*accent, 210), width=4)
     return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 
 
 def _draw_fast_visual_motif(draw, scene, accent, width: int, height: int):
     text = f"{scene.title} {scene.visual} {scene.subtitle}".lower()
-    soft = tuple(min(255, int(v * 1.2)) for v in accent)
-    dim = tuple(max(0, int(v * .38)) for v in accent)
+    soft = tuple(min(255, int(v * 1.05)) for v in accent)
     if "campo" in text or "calcio" in text or "stadio" in text:
-        horizon = int(height * .36)
-        draw.rectangle((0, horizon, width, height), fill=(5, 24, 16))
-        for offset in range(0, height - horizon, 75):
-            draw.line((int(width * .08), horizon + offset, int(width * .92), horizon + offset), fill=dim, width=2)
-        draw.line((int(width * .50), horizon, int(width * .50), height), fill=soft, width=4)
-        draw.ellipse((int(width * .30), horizon - 100, int(width * .70), horizon + 100), outline=soft, width=5)
+        horizon = int(height * .42)
+        draw.rectangle((0, horizon, width, height), fill=(5, 22, 15))
+        glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        glow_draw = ImageDraw.Draw(glow)
+        glow_draw.ellipse((int(width * .10), int(height * .18), int(width * .90), int(height * .78)), fill=(*accent, 24))
+        draw.bitmap((0, 0), glow.split()[-1], fill=soft)
         return
     if "codice" in text or "dashboard" in text or "dati" in text or "code" in text:
-        for index in range(10):
-            y = int(height * .18) + index * int(height * .055)
-            x1 = int(width * .12)
-            x2 = int(width * (.42 + (index % 4) * .12))
-            draw.line((x1, y, x2, y), fill=soft if index % 3 == 0 else dim, width=5)
-        for index in range(4):
-            x = int(width * (.12 + index * .19))
-            draw.rounded_rectangle((x, int(height * .55), x + int(width * .13), int(height * .64)), radius=18, outline=dim, width=3)
+        for index in range(5):
+            x = int(width * (.12 + index * .16))
+            y = int(height * (.32 + (index % 2) * .12))
+            draw.rounded_rectangle((x, y, x + int(width * .11), y + int(height * .075)), radius=18, fill=(255, 255, 255, 16), outline=(*accent, 38), width=2)
         return
-    for radius in range(int(width * .72), int(width * .14), -26):
-        alpha = radius / (width * .72)
-        color = tuple(int(v * alpha) for v in accent)
-        draw.ellipse((width // 2 - radius, int(height * .36) - radius, width // 2 + radius, int(height * .36) + radius), outline=color, width=3)
-
+    for radius in range(int(width * .68), int(width * .16), -34):
+        alpha = max(16, int(70 * radius / (width * .68)))
+        draw.ellipse((width // 2 - radius, int(height * .38) - radius, width // 2 + radius, int(height * .38) + radius), outline=(*accent, alpha), width=2)
 
 def _draw_particles(draw, scene, accent, width: int, height: int):
     particles = _scene_attr(scene, "particles", "light")
@@ -266,10 +258,6 @@ def _draw_scene(storyboard: StoryboardPlan, scene_index: int, tone: str, visual_
     if not media_image:
         _draw_fast_visual_motif(draw, scene, accent, width, height)
     _draw_particles(draw, scene, accent, width, height)
-    small_font = _get_font(max(18, width // 34))
-    margin = int(width * .065)
-    draw.rounded_rectangle((margin, margin, margin + int(width*.24), margin + 42), radius=21, fill=(0,0,0,160), outline=(*accent, 190), width=2)
-    draw.text((margin + 16, margin + 12), f"SCENA {scene.index}", font=small_font, fill=accent)
     _draw_reel_text(draw, scene, scene_index, accent, width, height)
     icon = _get_brand_asset(width, full=(scene_index == len(storyboard.scenes)))
     if icon:
@@ -329,33 +317,17 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
     draw = ImageDraw.Draw(overlay)
 
     if preset in {"social", "captions", "neon"}:
-        sweep_x = int(width * (-.35 + progress * 1.7))
-        draw.polygon(
-            [
-                (sweep_x, 0),
-                (sweep_x + int(width * .22), 0),
-                (sweep_x - int(width * .12), height),
-                (sweep_x - int(width * .34), height),
-            ],
-            fill=(*accent, int(16 + 34 * pulse)),
-        )
-
-    if preset == "data":
-        for row in range(9):
-            y = int(height * (.16 + row * .062 + progress * .04))
-            alpha = int(35 + 55 * ((row + scene.index) % 3 == 0))
-            draw.line((int(width * .08), y, int(width * (.42 + (row % 4) * .12)), y), fill=(*accent, alpha), width=3)
-        scan_y = int(height * ((progress * 1.3) % 1))
-        draw.rectangle((0, scan_y, width, scan_y + 5), fill=(*accent, 32))
+        glow_x = int(width * (.18 + .64 * progress))
+        draw.ellipse((glow_x - int(width * .34), int(height * .12), glow_x + int(width * .34), int(height * .72)), fill=(*accent, int(10 + 20 * pulse)))
 
     if preset == "sport":
-        y = int(height * (.72 + .03 * np.sin(progress * np.pi * 2)))
-        draw.arc((int(width * .18), y - 90, int(width * .82), y + 90), 180, 360, fill=(*accent, 90), width=5)
-        draw.line((int(width * .5), int(height * .22), int(width * .5), height), fill=(*accent, 36), width=3)
+        draw.ellipse((int(width * .08), int(height * .18), int(width * .92), int(height * .82)), outline=(*accent, 42), width=4)
 
-    if preset == "editorial":
-        draw.rectangle((int(width * .06), int(height * .10), int(width * .94), int(height * .105)), fill=(*accent, 120))
-        draw.rectangle((int(width * .06), int(height * .88), int(width * .34 + width * .18 * progress), int(height * .886)), fill=(*accent, 150))
+    if preset == "data":
+        for index in range(4):
+            x = int(width * (.12 + index * .19))
+            y = int(height * (.24 + .04 * np.sin(progress * np.pi * 2 + index)))
+            draw.rounded_rectangle((x, y, x + int(width * .13), y + int(height * .08)), radius=20, fill=(255, 255, 255, 14), outline=(*accent, 42), width=2)
 
     caption = " ".join((scene.voice_over or scene.subtitle or "").split())
     if caption:
@@ -370,27 +342,21 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
         cap_x = int(width * .07)
         cap_h = 58 + len(lines) * int(width * .052)
         cap_y = int(height * (.77 + .018 * (1 - min(1, progress * 5))))
-        draw.rounded_rectangle((cap_x, cap_y, cap_x + cap_w, cap_y + cap_h), radius=24, fill=(0, 0, 0, 138), outline=(*accent, int(100 + 80 * pulse)), width=3)
+        draw.rounded_rectangle((cap_x, cap_y, cap_x + cap_w, cap_y + cap_h), radius=24, fill=(0, 0, 0, 150), outline=(*accent, int(80 + 60 * pulse)), width=2)
         tx_y = cap_y + 22
         for line in lines:
             draw.text((cap_x + 24, tx_y), line, font=font, fill=(244, 248, 255, 245))
             tx_y += int(width * .052)
-        draw.rectangle((cap_x + 22, cap_y + cap_h - 14, cap_x + 22 + int((cap_w - 44) * progress), cap_y + cap_h - 9), fill=(*accent, 210))
 
-    if t < min(.32, duration * .18):
-        p = 1 - (t / min(.32, duration * .18))
-        draw.rectangle((0, 0, width, height), fill=(255, 255, 255, int(34 * p)))
-        wipe = int(width * (1 - p))
-        draw.rectangle((0, 0, wipe, height), fill=(*accent, int(24 * p)))
+    if t < min(.26, duration * .15):
+        p = 1 - (t / min(.26, duration * .15))
+        draw.rectangle((0, 0, width, height), fill=(255, 255, 255, int(24 * p)))
 
-    if t > duration - min(.28, duration * .16):
-        p = (t - (duration - min(.28, duration * .16))) / min(.28, duration * .16)
-        wipe = int(width * p)
-        draw.rectangle((width - wipe, 0, width, height), fill=(0, 0, 0, int(78 * p)))
-        draw.rectangle((width - wipe, 0, width - wipe + 8, height), fill=(*accent, int(180 * p)))
+    if t > duration - min(.24, duration * .14):
+        p = (t - (duration - min(.24, duration * .14))) / min(.24, duration * .14)
+        draw.rectangle((0, 0, width, height), fill=(0, 0, 0, int(52 * p)))
 
     return Image.alpha_composite(frame.convert("RGBA"), overlay).convert("RGB")
-
 
 def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing: str, visual_style: str, accent):
     duration = scene.duration_seconds

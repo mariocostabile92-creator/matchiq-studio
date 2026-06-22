@@ -87,7 +87,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V4.7</span>
+        <span>Studio V4.8</span>
         <strong>Hook Engine AI</strong>
         <p>Brief semplice, scene modificabili, immagini reali, voce, preview e render MP4.</p>
       </div>
@@ -111,7 +111,7 @@
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V4.7 Voice + Media Fit</span>
+          <span class="hero-badge">Studio V4.8 Clean Reel + Music</span>
           <h2>Il tuo studio AI per creare reel.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
@@ -354,7 +354,7 @@
               <p class="eyebrow">Progetto selezionato</p>
               <h2>Founder Reel</h2>
             </div>
-            <span class="status-pill">V4.5 Reel FX Engine</span>
+            <span class="status-pill">V4.8 Clean Reel Engine</span>
           </div>
 
           <div class="form-grid">
@@ -419,6 +419,16 @@
               Volume musica
               <input id="musicVolume" type="range" min="0" max="1" step="0.05" value="0.14" />
             </label>
+            <label>
+              Musica
+              <select id="musicMood">
+                <option value="cinematic" selected>Cinematic</option>
+                <option value="premium">Premium</option>
+                <option value="sport">Sport</option>
+                <option value="emotional">Emotional</option>
+                <option value="startup">Startup</option>
+              </select>
+            </label>
             <label class="toggle-row">
               <input id="voiceEnabled" type="checkbox" checked />
               Voice over
@@ -439,7 +449,7 @@
               Velocità voce
               <input id="voiceRate" type="range" min="-4" max="3" step="1" value="-1" />
             </label>
-            <div class="audio-note">Il voice-over viene inserito nel file MP4. La musica resta attiva di default e viene abbassata automaticamente sotto la voce.</div>
+            <div class="audio-note">Il voice-over viene inserito nel file MP4. La musica e pulita, senza linee visive nel video, e resta mixata sotto la voce.</div>
           </div>
 
           <div class="command-row">
@@ -631,8 +641,8 @@
     <a href="#render" data-nav-target="render"><span>⬢</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=47"></script>
-  <script src="/js/app.js?v=47"></script>
-  <script src="/js/hook-engine.js?v=47"></script>
+  <script src="/js/api.js?v=48"></script>
+  <script src="/js/app.js?v=48"></script>
+  <script src="/js/hook-engine.js?v=48"></script>
 </body>
 </html>
