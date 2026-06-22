@@ -196,7 +196,7 @@ function updateRenderStation(progress = 0, phase = "Pronto", message = "") {
 function getAudioSettings() {
   return {
     music_enabled: Boolean(musicEnabled?.checked),
-    music_volume: Number(musicVolume?.value || 0.08),
+    music_volume: Number(musicVolume?.value || 0.14),
     voice_enabled: Boolean(voiceEnabled?.checked),
     voice_volume: Number(voiceVolume?.value || 0.95),
     voice_style: voiceStyle?.value || "studio",
@@ -844,13 +844,14 @@ function applyStudioTemplate(templateName) {
 
 function applyVoicePreset(preset) {
   const presets = {
-    natural: { style: "studio", rate: -1, voice: .95, music: .04, mood: "Voce naturale, musica bassa." },
-    energetic: { style: "energetic", rate: 1, voice: 1, music: .045, mood: "Voce energica, ritmo piu veloce." },
-    premium: { style: "calm", rate: -2, voice: .95, music: .035, mood: "Voce premium, ritmo pulito." },
-    motivational: { style: "energetic", rate: 0, voice: 1, music: .04, mood: "Voce motivazionale, tono founder." },
+    natural: { style: "studio", rate: -1, voice: 1, music: .12, mood: "Voce naturale, musica presente ma sotto controllo." },
+    energetic: { style: "energetic", rate: 1, voice: 1, music: .14, mood: "Voce energica, ritmo piu veloce." },
+    premium: { style: "calm", rate: -2, voice: 1, music: .10, mood: "Voce premium, ritmo pulito." },
+    motivational: { style: "energetic", rate: 0, voice: 1, music: .13, mood: "Voce motivazionale, tono founder." },
   };
   const config = presets[preset] || presets.natural;
   if (voiceEnabled) voiceEnabled.checked = true;
+  if (musicEnabled) musicEnabled.checked = true;
   if (voiceStyle) voiceStyle.value = config.style;
   if (voiceRate) voiceRate.value = config.rate;
   if (voiceVolume) voiceVolume.value = config.voice;

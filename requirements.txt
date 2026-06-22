@@ -6,3 +6,4 @@ pillow
 moviepy
 numpy
 imageio-ffmpeg
+edge-tts

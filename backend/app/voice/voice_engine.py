@@ -1,4 +1,6 @@
+import asyncio
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -37,14 +39,15 @@ VOICE_STYLE_RATES = {
     "epic": 0,
 }
 
+EDGE_VOICES = {
+    "calm": "it-IT-ElsaNeural",
+    "studio": "it-IT-IsabellaNeural",
+    "energetic": "it-IT-DiegoNeural",
+    "epic": "it-IT-DiegoNeural",
+}
+
 
 def prepare_voice_script(text: str, style: str = "studio") -> str:
-    """Prepare text for better Windows TTS delivery.
-
-    System.Speech is not a premium neural voice, but punctuation and spacing
-    make a big difference. This adds short pauses after strong phrases.
-    """
-
     clean_text = " ".join((text or "").split())
     if not clean_text:
         return ""
@@ -61,25 +64,14 @@ def prepare_voice_script(text: str, style: str = "studio") -> str:
     return clean_text.strip()
 
 
-def synthesize_scene_voice(
-    text: str,
-    output_path: Path,
-    volume: float = 1.0,
-    style: str = "studio",
-    rate: int | None = None,
-) -> Path | None:
-    clean_text = prepare_voice_script(text, style=style)
-    if not clean_text:
+def _windows_tts(clean_text: str, output_path: Path, volume: float, style: str, rate: int | None) -> Path | None:
+    if not shutil.which("powershell"):
         return None
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     script_path = output_path.parent / "matchiq_tts.ps1"
     script_path.write_text(TTS_SCRIPT, encoding="utf-8")
-
-    # Push voice louder by default. The renderer will keep music lower.
-    safe_volume = int(max(0, min(100, round(max(volume, 0.92) * 100))))
+    safe_volume = int(max(0, min(100, round(max(volume, 0.96) * 100))))
     safe_rate = max(-4, min(3, rate if rate is not None else VOICE_STYLE_RATES.get(style, -1)))
-
     command = [
         "powershell",
         "-NoProfile",
@@ -104,5 +96,49 @@ def synthesize_scene_voice(
 
     if not output_path.exists() or output_path.stat().st_size == 0:
         return None
-
     return output_path
+
+
+async def _edge_tts(clean_text: str, output_path: Path, volume: float, style: str, rate: int | None) -> Path | None:
+    try:
+        import edge_tts
+    except ImportError:
+        return None
+
+    voice = EDGE_VOICES.get(style, EDGE_VOICES["studio"])
+    edge_path = output_path.with_suffix(".mp3")
+    rate_value = rate if rate is not None else VOICE_STYLE_RATES.get(style, -1)
+    rate_percent = max(-35, min(28, int(rate_value * 9)))
+    volume_percent = max(0, min(60, int((max(volume, 0.98) - 1) * 100)))
+    communicate = edge_tts.Communicate(
+        clean_text,
+        voice=voice,
+        rate=f"{rate_percent:+d}%",
+        volume=f"{volume_percent:+d}%",
+    )
+    await communicate.save(str(edge_path))
+    if not edge_path.exists() or edge_path.stat().st_size == 0:
+        return None
+    return edge_path
+
+
+def synthesize_scene_voice(
+    text: str,
+    output_path: Path,
+    volume: float = 1.0,
+    style: str = "studio",
+    rate: int | None = None,
+) -> Path | None:
+    clean_text = prepare_voice_script(text, style=style)
+    if not clean_text:
+        return None
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    windows_path = _windows_tts(clean_text, output_path, volume=volume, style=style, rate=rate)
+    if windows_path:
+        return windows_path
+
+    try:
+        return asyncio.run(_edge_tts(clean_text, output_path, volume=volume, style=style, rate=rate))
+    except Exception:
+        return None

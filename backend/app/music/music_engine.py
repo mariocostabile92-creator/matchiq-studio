@@ -78,7 +78,7 @@ def _ducking_curve(time, duration: float):
     scene_len = max(2.0, duration / 5)
     phase = np.mod(time, scene_len) / scene_len
     # Quieter during likely voice-over window, fuller during transitions.
-    return np.where((phase > 0.12) & (phase < 0.78), 0.46, 0.82)
+    return np.where((phase > 0.12) & (phase < 0.78), 0.62, 0.98)
 
 
 def build_music_bed(tone: str, duration: float, volume: float = 0.06, mood: str | None = None):
@@ -93,7 +93,7 @@ def build_music_bed(tone: str, duration: float, volume: float = 0.06, mood: str 
     notes = preset["notes"]
 
     # Never let generated placeholder music dominate the voice.
-    safe_volume = max(0.0, min(0.12, volume))
+    safe_volume = max(0.0, min(0.20, volume))
     bpm = 92 if selected in {"premium", "emotional"} else 112 if selected == "sport" else 104
 
     def frame_function(t):
@@ -112,7 +112,7 @@ def build_music_bed(tone: str, duration: float, volume: float = 0.06, mood: str 
         shimmer = preset["shimmer"] * np.sin(2 * math.pi * notes[-1] * 2 * time)
         kick = _soft_kick(time, bpm=bpm, strength=preset["kick"] * 0.11)
 
-        signal = 0.16 * phrase + pad + pulse + shimmer + kick
+        signal = 0.22 * phrase + 1.18 * pad + 1.10 * pulse + shimmer + 1.35 * kick
 
         fade_in = np.minimum(1.0, time / 1.0)
         fade_out = np.minimum(1.0, np.maximum(0.0, (duration - time) / 1.2))

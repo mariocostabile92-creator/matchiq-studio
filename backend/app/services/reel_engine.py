@@ -13,7 +13,7 @@ def build_reel(
     call_to_action: str,
     visual_style: str = "auto",
     pacing: str = "balanced",
-    music_enabled: bool = False,
+    music_enabled: bool = True,
     music_volume: float = 0.08,
     voice_enabled: bool = True,
     voice_volume: float = 0.95,
