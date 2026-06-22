@@ -62,6 +62,99 @@ let selectedSceneIndex = 0;
 let mediaAssets = [];
 let sceneRegenerationCount = 0;
 
+/* ==============================
+   MatchIQ Studio V4.6 Auth Gate
+   ============================== */
+const authShell = document.getElementById("authShell");
+const appShell = document.getElementById("appShell");
+const authForm = document.getElementById("authForm");
+const loginTab = document.getElementById("loginTab");
+const registerTab = document.getElementById("registerTab");
+const authTitle = document.getElementById("authTitle");
+const authSubtitle = document.getElementById("authSubtitle");
+const authName = document.getElementById("authName");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authSubmitBtn = document.getElementById("authSubmitBtn");
+const authStatus = document.getElementById("authStatus");
+const logoutBtn = document.getElementById("logoutBtn");
+let authMode = "login";
+let currentUser = null;
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const isRegister = mode === "register";
+  loginTab?.classList.toggle("active", !isRegister);
+  registerTab?.classList.toggle("active", isRegister);
+  document.querySelector(".auth-name-field")?.classList.toggle("hidden", !isRegister);
+  if (authTitle) authTitle.textContent = isRegister ? "Crea il tuo account" : "Accedi al tuo workspace";
+  if (authSubtitle) authSubtitle.textContent = isRegister ? "Registra il workspace e inizia a creare reel." : "Entra e continua a creare contenuti verticali.";
+  if (authSubmitBtn) authSubmitBtn.textContent = isRegister ? "Crea account" : "Accedi";
+  if (authPassword) authPassword.autocomplete = isRegister ? "new-password" : "current-password";
+  if (authStatus) authStatus.textContent = "Pronto.";
+}
+
+function showApp(user) {
+  currentUser = user;
+  document.body.classList.remove("auth-locked");
+  document.body.classList.add("authenticated");
+  authShell?.setAttribute("hidden", "hidden");
+  appShell?.removeAttribute("aria-hidden");
+  const assistant = document.querySelector(".assistant-message-card strong");
+  if (assistant) assistant.textContent = `Workspace pronto, ${user.name}.`;
+}
+
+function showAuth(message = "Accedi o crea un account per continuare.") {
+  document.body.classList.add("auth-locked");
+  document.body.classList.remove("authenticated");
+  authShell?.removeAttribute("hidden");
+  appShell?.setAttribute("aria-hidden", "true");
+  if (authStatus) authStatus.textContent = message;
+}
+
+async function bootAuth() {
+  try {
+    const data = await getCurrentUser();
+    showApp(data.user);
+  } catch {
+    showAuth();
+  }
+}
+
+loginTab?.addEventListener("click", () => setAuthMode("login"));
+registerTab?.addEventListener("click", () => setAuthMode("register"));
+
+authForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    authSubmitBtn.disabled = true;
+    authStatus.textContent = authMode === "register" ? "Creo il workspace..." : "Accesso in corso...";
+    const payload = {
+      email: authEmail.value.trim(),
+      password: authPassword.value,
+    };
+    const data = authMode === "register"
+      ? await registerUser({...payload, name: authName.value.trim() || "Creator"})
+      : await loginUser(payload);
+    authForm.reset();
+    showApp(data.user);
+  } catch (error) {
+    authStatus.textContent = error.message;
+  } finally {
+    authSubmitBtn.disabled = false;
+  }
+});
+
+logoutBtn?.addEventListener("click", async () => {
+  await logoutUser().catch(() => null);
+  currentUser = null;
+  showAuth("Sessione chiusa.");
+});
+
+setAuthMode("login");
+bootAuth();
+
+
 function getValue(id) {
   return document.getElementById(id)?.value?.trim() || "";
 }

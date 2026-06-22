@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.core.config import APP_NAME, APP_VERSION, FRONTEND_DIR, RENDERS_DIR, UPLOADS_DIR
-from backend.app.routers import campaigns, media, projects, reels
+from backend.app.routers import auth, campaigns, media, projects, reels
 
 app = FastAPI(
     title=APP_NAME,
@@ -40,6 +40,7 @@ async def no_cache_for_app_shell(request, call_next):
 
     return response
 
+app.include_router(auth.router)
 app.include_router(reels.router)
 app.include_router(projects.router)
 app.include_router(campaigns.router)

@@ -9,3 +9,5 @@ storage/uploads/*
 storage/renders/*
 !storage/uploads/.gitkeep
 !storage/renders/.gitkeep
+storage/auth/*
+!storage/auth/.gitkeep

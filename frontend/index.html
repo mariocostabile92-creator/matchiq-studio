@@ -19,8 +19,53 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 
-<body>
-  <main class="app">
+<body class="auth-locked">
+
+  <section class="auth-shell" id="authShell" aria-label="Accesso MatchIQ Studio">
+    <div class="auth-brand-panel">
+      <img src="/assets/brand/matchiq-studio-primary.png" alt="MatchIQ Studio" />
+      <span>AI Creative Studio</span>
+      <h1>Crea reel professionali senza diventare un montatore video.</h1>
+      <p>Accedi al tuo workspace, genera storyboard, carica media reali, modifica scene e produci MP4 verticali con voice-over e motion.</p>
+      <div class="auth-proof-grid">
+        <div><strong>9:16</strong><small>Formato social</small></div>
+        <div><strong>AI</strong><small>Hook e scene</small></div>
+        <div><strong>MP4</strong><small>Export pronto</small></div>
+      </div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-card-head">
+        <p class="eyebrow">MatchIQ Studio</p>
+        <h2 id="authTitle">Accedi al tuo workspace</h2>
+        <p id="authSubtitle">Entra e continua a creare contenuti verticali.</p>
+      </div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Accesso o registrazione">
+        <button class="active" id="loginTab" type="button">Login</button>
+        <button id="registerTab" type="button">Registrazione</button>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <label class="auth-name-field hidden">
+          Nome workspace
+          <input id="authName" autocomplete="name" placeholder="Mario Costabile" />
+        </label>
+        <label>
+          Email
+          <input id="authEmail" type="email" autocomplete="email" placeholder="nome@azienda.com" required />
+        </label>
+        <label>
+          Password
+          <input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimo 8 caratteri" required />
+        </label>
+        <button class="primary-btn auth-submit" id="authSubmitBtn" type="submit">Accedi</button>
+        <p class="auth-status" id="authStatus">Pronto.</p>
+      </form>
+    </div>
+  </section>
+
+  <main class="app" id="appShell">
     <aside class="sidebar" aria-label="Navigazione MatchIQ Studio">
       <div class="identity">
         <img class="brand-logo" src="/assets/brand/matchiq-app-icon.png" alt="MatchIQ Studio" />
@@ -42,7 +87,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V4.5</span>
+        <span>Studio V4.6</span>
         <strong>Hook Engine AI</strong>
         <p>Brief semplice, scene modificabili, immagini reali, voce, preview e render MP4.</p>
       </div>
@@ -59,14 +104,15 @@
         </div>
         <div class="top-actions">
           <button class="ghost-btn" type="button">Salva bozza</button>
+          <button class="ghost-btn compact" id="logoutBtn" type="button">Esci</button>
           <button class="primary-btn compact" id="generateTopBtn" type="button">Crea MP4</button>
         </div>
       </header>
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V4.5 Reel FX</span>
-          <h2>Bentornato, Mario.</h2>
+          <span class="hero-badge">Studio V4.6 Auth + Reel FX</span>
+          <h2>Il tuo studio AI per creare reel.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
             in contenuti verticali pronti per LinkedIn, Instagram, TikTok e YouTube Shorts.
@@ -103,7 +149,7 @@
             <b id="studioSessionState">Live</b>
           </div>
           <div class="assistant-message-card">
-            <strong>Ciao Mario, il workspace è pronto.</strong>
+            <strong>Workspace è pronto.</strong>
             <p>Hook forte, durata bilanciata e render engine disponibile. Il prossimo passo consigliato è migliorare la CTA.</p>
           </div>
           <div class="pipeline-mini" aria-label="Pipeline contenuto">
@@ -585,8 +631,8 @@
     <a href="#render" data-nav-target="render"><span>⬢</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=45"></script>
-  <script src="/js/app.js?v=45"></script>
-  <script src="/js/hook-engine.js?v=45"></script>
+  <script src="/js/api.js?v=46"></script>
+  <script src="/js/app.js?v=46"></script>
+  <script src="/js/hook-engine.js?v=46"></script>
 </body>
 </html>
