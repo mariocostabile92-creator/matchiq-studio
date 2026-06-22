@@ -2337,3 +2337,256 @@ body.studio-editor-open .timeline-list li{
     border-radius:18px;
   }
 }
+
+/* ==============================
+   MatchIQ Studio V4.4 Layout + Motion
+   ============================== */
+html{
+  background:#030814;
+}
+body{
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  opacity:.22;
+  background:
+    linear-gradient(90deg, rgba(120,255,63,.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(29,155,255,.05) 1px, transparent 1px);
+  background-size:72px 72px;
+  mask-image:linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  animation:studioGridDrift 18s linear infinite;
+}
+@keyframes studioGridDrift{
+  from{background-position:0 0,0 0}
+  to{background-position:72px 36px,36px 72px}
+}
+
+@media (min-width:1180px){
+  .app{
+    grid-template-columns:220px minmax(0,1fr);
+  }
+  .sidebar{
+    width:auto;
+    padding:22px 18px;
+  }
+  .workspace{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:24px clamp(22px, 2vw, 38px);
+  }
+  .topbar-v24,
+  .studio-hero-v24,
+  .easy-creator-panel,
+  .quick-grid,
+  .enterprise-grid-v24,
+  .metrics-grid,
+  .studio-editor-shell,
+  .main-grid,
+  .system-grid,
+  .render-station,
+  .result-panel{
+    width:100%;
+    max-width:1760px;
+    margin-left:0;
+    margin-right:auto;
+  }
+  .topbar-v24{
+    display:flex;
+    align-items:flex-start;
+  }
+  .studio-hero-v24{
+    grid-template-columns:minmax(0,1.45fr) minmax(340px,.7fr);
+    min-height:350px;
+  }
+  .easy-flow-grid{
+    grid-template-columns:1fr 1fr 1fr minmax(320px,1.4fr);
+  }
+  .quick-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .enterprise-grid-v24{
+    grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr) minmax(280px,.7fr);
+  }
+  .metrics-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  body.studio-editor-open .workspace{
+    padding:22px clamp(22px, 2vw, 38px);
+  }
+  body.studio-editor-open .main-grid{
+    width:100%;
+    max-width:1760px;
+    grid-template-columns:minmax(520px,1fr) minmax(330px,390px);
+    gap:18px;
+  }
+  body.studio-editor-open .system-grid{
+    width:100%;
+    max-width:1760px;
+    grid-template-columns:minmax(390px,.78fr) minmax(560px,1.22fr);
+    gap:18px;
+  }
+  body.studio-editor-open .render-station{
+    max-width:1760px;
+  }
+  body.studio-editor-open .phone-panel{
+    min-height:640px;
+  }
+  body.studio-editor-open .phone{
+    width:min(330px,100%);
+    height:630px;
+  }
+  body.studio-editor-open .phone-screen{
+    height:568px;
+  }
+}
+
+.studio-hero-v24,
+.easy-creator-panel,
+.enterprise-card,
+.panel,
+.phone-panel,
+.render-station{
+  position:relative;
+}
+.studio-hero-v24::before,
+.easy-creator-panel::before,
+.render-station::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:.0;
+  background:linear-gradient(120deg, transparent 0%, rgba(255,255,255,.08) 38%, transparent 62%);
+  transform:translateX(-65%);
+  transition:opacity .25s ease;
+}
+.studio-hero-v24:hover::before,
+.easy-creator-panel:hover::before,
+.render-station:hover::before{
+  opacity:1;
+  animation:panelSheen 1.15s ease;
+}
+@keyframes panelSheen{
+  from{transform:translateX(-70%)}
+  to{transform:translateX(70%)}
+}
+
+.quick-card,
+.preset-card,
+.recent-project-card,
+.assistant-list button,
+.media-card,
+.scene-card-actions button{
+  will-change:transform;
+}
+.quick-card:hover,
+.preset-card:hover,
+.media-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 45px rgba(0,0,0,.28), 0 0 0 1px rgba(120,255,63,.16);
+}
+.primary-btn{
+  position:relative;
+  overflow:hidden;
+}
+.primary-btn::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(110deg, transparent 0%, rgba(255,255,255,.38) 42%, transparent 58%);
+  transform:translateX(-120%);
+}
+.primary-btn:hover::after{
+  animation:buttonSweep .72s ease;
+}
+@keyframes buttonSweep{
+  to{transform:translateX(120%)}
+}
+
+.phone-screen[data-has-image="true"]{
+  animation:imageBreath 8s ease-in-out infinite;
+}
+@keyframes imageBreath{
+  0%,100%{background-size:100% auto}
+  50%{background-size:108% auto}
+}
+.preview-copy{
+  text-shadow:0 8px 28px rgba(0,0,0,.58);
+}
+.preview-line{
+  box-shadow:0 0 22px rgba(120,255,63,.45);
+}
+
+.timeline-list li.selected{
+  box-shadow:0 0 0 1px rgba(120,255,63,.38), 0 18px 42px rgba(0,0,0,.22);
+}
+.scene-card-actions button{
+  transition:.18s ease;
+}
+.scene-card-actions button:hover{
+  transform:translateY(-2px);
+  background:rgba(120,255,63,.12);
+}
+
+.render-progress-track span{
+  position:relative;
+  overflow:hidden;
+}
+.render-progress-track span::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent);
+  animation:progressFlow 1.4s linear infinite;
+}
+@keyframes progressFlow{
+  from{transform:translateX(-100%)}
+  to{transform:translateX(100%)}
+}
+.render-step.is-active{
+  animation:stepPulse 1.15s ease-in-out infinite;
+}
+@keyframes stepPulse{
+  0%,100%{box-shadow:0 0 0 rgba(120,255,63,0)}
+  50%{box-shadow:0 0 32px rgba(120,255,63,.18)}
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+@media (max-width:820px){
+  .workspace{
+    padding:16px 14px 92px;
+  }
+  .easy-head .primary-btn,
+  .top-actions .primary-btn,
+  .top-actions .ghost-btn{
+    width:100%;
+  }
+  .top-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .studio-hero-v24 h2{
+    font-size:38px;
+    letter-spacing:-1px;
+  }
+  .phone-panel{
+    padding:14px;
+  }
+}
