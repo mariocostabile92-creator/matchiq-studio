@@ -284,10 +284,100 @@ def _motion_speed_factor(scene) -> float:
     return {"slow": .72, "medium": 1.0, "fast": 1.38, "impact": 1.62}.get(_scene_attr(scene, "motion_speed", "medium"), 1.0)
 
 
-def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing: str):
+def _effect_preset(scene, visual_style: str) -> str:
+    text = f"{visual_style} {scene.title} {scene.visual} {scene.motion}".lower()
+    if "sport" in text or "campo" in text or "calcio" in text:
+        return "sport"
+    if "data" in text or "hud" in text or "codice" in text or "dashboard" in text:
+        return "data"
+    if "caption" in text or "sottotit" in text:
+        return "captions"
+    if "neon" in text:
+        return "neon"
+    if "editorial" in text or "premium" in text:
+        return "editorial"
+    if "social" in text:
+        return "social"
+    return "social"
+
+
+def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float, visual_style: str, accent, width: int, height: int) -> Image.Image:
+    preset = _effect_preset(scene, visual_style)
+    progress = max(0.0, min(1.0, t / max(duration, .01)))
+    pulse = .5 + .5 * np.sin(progress * np.pi * 4)
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+
+    if preset in {"social", "captions", "neon"}:
+        sweep_x = int(width * (-.35 + progress * 1.7))
+        draw.polygon(
+            [
+                (sweep_x, 0),
+                (sweep_x + int(width * .22), 0),
+                (sweep_x - int(width * .12), height),
+                (sweep_x - int(width * .34), height),
+            ],
+            fill=(*accent, int(16 + 34 * pulse)),
+        )
+
+    if preset == "data":
+        for row in range(9):
+            y = int(height * (.16 + row * .062 + progress * .04))
+            alpha = int(35 + 55 * ((row + scene.index) % 3 == 0))
+            draw.line((int(width * .08), y, int(width * (.42 + (row % 4) * .12)), y), fill=(*accent, alpha), width=3)
+        scan_y = int(height * ((progress * 1.3) % 1))
+        draw.rectangle((0, scan_y, width, scan_y + 5), fill=(*accent, 32))
+
+    if preset == "sport":
+        y = int(height * (.72 + .03 * np.sin(progress * np.pi * 2)))
+        draw.arc((int(width * .18), y - 90, int(width * .82), y + 90), 180, 360, fill=(*accent, 90), width=5)
+        draw.line((int(width * .5), int(height * .22), int(width * .5), height), fill=(*accent, 36), width=3)
+
+    if preset == "editorial":
+        draw.rectangle((int(width * .06), int(height * .10), int(width * .94), int(height * .105)), fill=(*accent, 120))
+        draw.rectangle((int(width * .06), int(height * .88), int(width * .34 + width * .18 * progress), int(height * .886)), fill=(*accent, 150))
+
+    caption = " ".join((scene.voice_over or scene.subtitle or "").split())
+    if caption:
+        words = caption.split()
+        shown = max(1, min(len(words), int(len(words) * min(1, progress * 1.25)) + 1))
+        live_caption = " ".join(words[:shown])
+        if len(live_caption.split()) > 9:
+            live_caption = " ".join(live_caption.split()[-9:])
+        font = _get_font(max(24, width // 25))
+        lines = _wrap_text(live_caption, font, int(width * .78), width, height)[-2:]
+        cap_w = int(width * .86)
+        cap_x = int(width * .07)
+        cap_h = 58 + len(lines) * int(width * .052)
+        cap_y = int(height * (.77 + .018 * (1 - min(1, progress * 5))))
+        draw.rounded_rectangle((cap_x, cap_y, cap_x + cap_w, cap_y + cap_h), radius=24, fill=(0, 0, 0, 138), outline=(*accent, int(100 + 80 * pulse)), width=3)
+        tx_y = cap_y + 22
+        for line in lines:
+            draw.text((cap_x + 24, tx_y), line, font=font, fill=(244, 248, 255, 245))
+            tx_y += int(width * .052)
+        draw.rectangle((cap_x + 22, cap_y + cap_h - 14, cap_x + 22 + int((cap_w - 44) * progress), cap_y + cap_h - 9), fill=(*accent, 210))
+
+    if t < min(.32, duration * .18):
+        p = 1 - (t / min(.32, duration * .18))
+        draw.rectangle((0, 0, width, height), fill=(255, 255, 255, int(34 * p)))
+        wipe = int(width * (1 - p))
+        draw.rectangle((0, 0, wipe, height), fill=(*accent, int(24 * p)))
+
+    if t > duration - min(.28, duration * .16):
+        p = (t - (duration - min(.28, duration * .16))) / min(.28, duration * .16)
+        wipe = int(width * p)
+        draw.rectangle((width - wipe, 0, width, height), fill=(0, 0, 0, int(78 * p)))
+        draw.rectangle((width - wipe, 0, width - wipe + 8, height), fill=(*accent, int(180 * p)))
+
+    return Image.alpha_composite(frame.convert("RGBA"), overlay).convert("RGB")
+
+
+def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing: str, visual_style: str, accent):
     duration = scene.duration_seconds
     motion = _motion_kind(scene)
-    zoom_level = max(1.08, min(1.72, float(_scene_attr(scene, "zoom_level", 1.16))))
+    preset = _effect_preset(scene, visual_style)
+    base_zoom = {"social": 1.22, "captions": 1.18, "neon": 1.24, "sport": 1.20, "data": 1.16, "editorial": 1.12}.get(preset, 1.16)
+    zoom_level = max(base_zoom, min(1.72, float(_scene_attr(scene, "zoom_level", base_zoom))))
     source = Image.open(scene_path).convert("RGB")
     zoomed_width = int(width * zoom_level)
     zoomed_height = int(height * zoom_level)
@@ -304,24 +394,18 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
             return int(max_x * (.44 + .12 * progress)), int(max_y * (.08 + .84 * progress))
         if motion == "reveal":
             return int(max_x * (.50 + .14 * progress)), int(max_y * (.62 - .30 * progress))
+        if preset == "social":
+            punch = .5 + .5 * np.sin(progress * np.pi * 3)
+            return int(max_x * (.50 + .12 * progress + .03 * punch)), int(max_y * (.58 - .24 * progress))
         return int(max_x * (.45 + .18 * progress)), int(max_y * (.60 - .28 * progress))
 
     def make_frame(t):
         x, y = crop_origin(t)
         frame = source.crop((x, y, x + width, y + height))
-        start_window = min(.28, duration * .20)
-        end_window = min(.22, duration * .16)
-        if t < start_window:
-            p = 1 - (t / start_window)
-            white = Image.new("RGB", (width, height), (255, 255, 255))
-            frame = Image.blend(frame, white, p * .16)
-        if t > duration - end_window:
-            p = (t - (duration - end_window)) / end_window
-            black = Image.new("RGB", (width, height), (0, 0, 0))
-            frame = Image.blend(frame, black, p * .14)
+        frame = _draw_dynamic_overlays(frame, scene, t, duration, visual_style, accent, width, height)
         return np.array(frame)
-    return VideoClip(frame_function=make_frame, duration=duration)
 
+    return VideoClip(frame_function=make_frame, duration=duration)
 
 def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = False, music_volume: float = 0.05, music_mood: str = "cinematic", voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
     width, height = (DRAFT_WIDTH, DRAFT_HEIGHT) if quality == "draft" else (FINAL_WIDTH, FINAL_HEIGHT)
@@ -334,10 +418,10 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     for index, scene in enumerate(storyboard.scenes, start=1):
         if on_progress:
             progress = 18 + int((index - 1) / len(storyboard.scenes) * 58)
-            on_progress(progress, f"Sto preparando scena {index}: testo gigante, motion e visual...")
+            on_progress(progress, f"Sto preparando scena {index}: transizioni, testo vivo e sottotitoli animati...")
         scene_path = work_dir / f"scene_{index}.png"
         _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
-        clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing))
+        clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing, visual_style, TONE_BACKGROUNDS.get(tone, TONE_BACKGROUNDS["cinematic"])[2]))
     if on_progress:
         on_progress(82, "Sto esportando il file MP4 in modalita' draft...")
     final = concatenate_videoclips(clips, method="compose")

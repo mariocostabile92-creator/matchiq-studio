@@ -2590,3 +2590,71 @@ body::before{
     padding:14px;
   }
 }
+
+/* ==============================
+   MatchIQ Studio V4.5 Center + Reel FX
+   ============================== */
+@media (min-width:1180px){
+  .workspace{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-left:clamp(22px,2vw,38px);
+    padding-right:clamp(22px,2vw,38px);
+  }
+  .topbar-v24,
+  .studio-hero-v24,
+  .easy-creator-panel,
+  .quick-grid,
+  .enterprise-grid-v24,
+  .metrics-grid,
+  .studio-editor-shell,
+  .main-grid,
+  .system-grid,
+  .render-station,
+  .result-panel{
+    width:min(100%, 1500px);
+    max-width:1500px;
+    margin-left:auto !important;
+    margin-right:auto !important;
+  }
+  .studio-hero-v24{
+    grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);
+  }
+  .easy-flow-grid{
+    grid-template-columns:1fr 1fr 1fr minmax(280px,1.15fr);
+  }
+  body.studio-editor-open .main-grid,
+  body.studio-editor-open .system-grid,
+  body.studio-editor-open .render-station{
+    width:min(100%, 1560px);
+    max-width:1560px;
+  }
+  body.studio-editor-open .main-grid{
+    grid-template-columns:minmax(520px,1fr) minmax(330px,410px);
+  }
+  body.studio-editor-open .system-grid{
+    grid-template-columns:minmax(390px,.82fr) minmax(560px,1.18fr);
+  }
+}
+.studio-hero-v24,
+.easy-creator-panel,
+.quick-card,
+.enterprise-card,
+.panel,
+.render-station{
+  transform-origin:center;
+}
+.phone-screen[data-visual-style="social"] .preview-copy,
+.phone-screen[data-visual-style="captions"] .preview-copy{
+  animation:copyPunch 2.4s ease-in-out infinite;
+}
+.phone-screen[data-visual-style="neon"] .motion-light{
+  opacity:.82;
+  animation-duration:2.8s;
+}
+@keyframes copyPunch{
+  0%,100%{transform:translateY(0) scale(1)}
+  12%{transform:translateY(-10px) scale(1.035)}
+  24%{transform:translateY(0) scale(1)}
+}
