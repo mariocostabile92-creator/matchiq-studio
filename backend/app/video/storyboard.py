@@ -11,6 +11,7 @@ class ScenePlan(BaseModel):
     voice_over: str
     subtitle: str
     image_url: str | None = None
+    visual_layout: str = Field(default="auto")
     duration_seconds: float = Field(default=3.0, ge=1.0, le=12.0)
 
     # MatchIQ Studio V4.2 - Cinematic Director fields

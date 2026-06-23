@@ -28,6 +28,7 @@ const sceneTitleInput = document.getElementById("sceneTitleInput");
 const sceneSubtitleInput = document.getElementById("sceneSubtitleInput");
 const sceneVisualInput = document.getElementById("sceneVisualInput");
 const sceneImageInput = document.getElementById("sceneImageInput");
+const sceneLayoutInput = document.getElementById("sceneLayoutInput");
 const sceneMotionInput = document.getElementById("sceneMotionInput");
 const sceneVoiceInput = document.getElementById("sceneVoiceInput");
 const sceneMotionPreset = document.getElementById("sceneMotionPreset");
@@ -251,6 +252,7 @@ function scene(index, title, subtitle, visual) {
     lighting: "Contrasto alto",
     voice_over: subtitle,
     image_url: "",
+    visual_layout: "auto",
     duration_seconds: 3,
   };
 }
@@ -320,7 +322,9 @@ function renderMediaAssets() {
       if (!activeScene) return;
 
       activeScene.image_url = button.dataset.mediaUrl;
+      activeScene.visual_layout = activeScene.visual_layout || "auto";
       sceneImageInput.value = activeScene.image_url;
+      if (sceneLayoutInput) sceneLayoutInput.value = activeScene.visual_layout;
       updatePreviewFromScene();
       setStatus("Immagine assegnata alla scena selezionata.", "Media");
     });
@@ -338,9 +342,13 @@ function autoAssignMediaToScenes() {
     return;
   }
 
+  const layoutCycle = ["full", "poster", "split", "quote", "player"];
   currentStoryboard.scenes.forEach((sceneItem, index) => {
     if (!sceneItem.image_url) {
       sceneItem.image_url = mediaAssets[index % mediaAssets.length].url;
+    }
+    if (!sceneItem.visual_layout || sceneItem.visual_layout === "auto") {
+      sceneItem.visual_layout = layoutCycle[index % layoutCycle.length];
     }
   });
 
@@ -469,8 +477,8 @@ function fillSceneEditor() {
   const activeScene = currentStoryboard?.scenes?.[selectedSceneIndex];
   const disabled = !activeScene;
 
-  [sceneTitleInput, sceneSubtitleInput, sceneVisualInput, sceneImageInput, sceneMotionInput, sceneVoiceInput, sceneMotionPreset, sceneDurationInput].forEach((input) => {
-    input.disabled = disabled;
+  [sceneTitleInput, sceneSubtitleInput, sceneVisualInput, sceneImageInput, sceneLayoutInput, sceneMotionInput, sceneVoiceInput, sceneMotionPreset, sceneDurationInput].forEach((input) => {
+    if (input) input.disabled = disabled;
   });
 
   if (!activeScene) {
@@ -480,6 +488,7 @@ function fillSceneEditor() {
     sceneSubtitleInput.value = "";
     sceneVisualInput.value = "";
     sceneImageInput.value = "";
+    if (sceneLayoutInput) sceneLayoutInput.value = "auto";
     sceneMotionInput.value = "";
     sceneVoiceInput.value = "";
     sceneMotionPreset.value = "Push-in lento - Zoom e parallax leggero";
@@ -494,6 +503,7 @@ function fillSceneEditor() {
   sceneVisualInput.value = activeScene.visual || "";
   refreshSceneImageOptions();
   sceneImageInput.value = activeScene.image_url || "";
+  if (sceneLayoutInput) sceneLayoutInput.value = activeScene.visual_layout || "auto";
   sceneMotionInput.value = [activeScene.camera, activeScene.motion].filter(Boolean).join(" - ");
   sceneVoiceInput.value = activeScene.voice_over || "";
   sceneMotionPreset.value = [activeScene.camera, activeScene.motion].filter(Boolean).join(" - ") || "Push-in lento - Zoom e parallax leggero";
@@ -515,6 +525,7 @@ function updateSceneFromEditor() {
   activeScene.subtitle = sceneSubtitleInput.value.trim() || activeScene.subtitle;
   activeScene.visual = sceneVisualInput.value.trim() || activeScene.visual;
   activeScene.image_url = sceneImageInput.value;
+  activeScene.visual_layout = sceneLayoutInput?.value || "auto";
   const motionParts = sceneMotionInput.value.split(" - ").map((part) => part.trim()).filter(Boolean);
   activeScene.camera = motionParts[0] || activeScene.camera;
   activeScene.motion = motionParts.slice(1).join(" - ") || activeScene.motion;
@@ -711,8 +722,9 @@ function registerServiceWorker() {
   document.getElementById(id)?.addEventListener("change", updatePreview);
 });
 
-[sceneTitleInput, sceneSubtitleInput, sceneVisualInput, sceneImageInput, sceneMotionInput, sceneVoiceInput, sceneDurationInput].forEach((input) => {
-  input.addEventListener("input", updateSceneFromEditor);
+[sceneTitleInput, sceneSubtitleInput, sceneVisualInput, sceneImageInput, sceneLayoutInput, sceneMotionInput, sceneVoiceInput, sceneDurationInput].forEach((input) => {
+  input?.addEventListener("input", updateSceneFromEditor);
+  input?.addEventListener("change", updateSceneFromEditor);
 });
 
 sceneMotionPreset.addEventListener("change", () => {

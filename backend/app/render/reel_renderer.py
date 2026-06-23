@@ -77,7 +77,31 @@ def _smart_reel_text(scene, scene_index: int) -> str:
     return text.upper()
 
 
-def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.Image | None:
+def _enhance_uploaded_image(img: Image.Image) -> Image.Image:
+    img = ImageEnhance.Contrast(img).enhance(1.08)
+    img = ImageEnhance.Color(img).enhance(1.08)
+    return ImageEnhance.Brightness(img).enhance(1.03)
+
+
+def _rounded_mask(size: tuple[int, int], radius: int) -> Image.Image:
+    mask = Image.new("L", size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, size[0], size[1]), radius=radius, fill=255)
+    return mask
+
+
+def _paste_shadowed(canvas: Image.Image, foreground: Image.Image, x: int, y: int, radius: int = 28):
+    shadow = Image.new("RGBA", foreground.size, (0, 0, 0, 0))
+    shadow.putalpha(Image.new("L", foreground.size, 145).filter(ImageFilter.GaussianBlur(radius=22)))
+    canvas.alpha_composite(shadow, (x, y + 18))
+    if radius > 0:
+        fg = foreground.convert("RGBA")
+        fg.putalpha(_rounded_mask(foreground.size, radius))
+        canvas.alpha_composite(fg, (x, y))
+    else:
+        canvas.alpha_composite(foreground.convert("RGBA"), (x, y))
+
+
+def _load_scene_image(image_url: str | None, width: int, height: int, layout: str = "auto") -> Image.Image | None:
     if not image_url or not image_url.startswith("/uploads/"):
         return None
     image_path = UPLOADS_DIR / Path(image_url).name
@@ -88,29 +112,68 @@ def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.I
     except OSError:
         return None
 
-    # Keep the full uploaded image visible. The background fills 9:16 with a
-    # blurred cover, while the real image is contained in the safe area.
-    background = ImageOps.fit(original, (width, height), method=Image.Resampling.LANCZOS, centering=(.5, .5))
-    background = background.filter(ImageFilter.GaussianBlur(radius=max(18, width // 28)))
-    background = ImageEnhance.Brightness(background).enhance(.58)
-    background = ImageEnhance.Color(background).enhance(1.10)
+    layout = (layout or "auto").lower().strip()
+    if layout == "auto":
+        ratio = original.width / max(1, original.height)
+        layout = "full" if .48 <= ratio <= .70 else "poster"
 
-    safe_w = int(width * .96)
-    safe_h = int(height * .86)
+    background = ImageOps.fit(original, (width, height), method=Image.Resampling.LANCZOS, centering=(.5, .5))
+    background = background.filter(ImageFilter.GaussianBlur(radius=max(20, width // 25)))
+    background = ImageEnhance.Brightness(background).enhance(.50)
+    background = ImageEnhance.Color(background).enhance(1.12)
+    canvas = background.convert("RGBA")
+
+    if layout == "full":
+        full = ImageOps.fit(original, (width, height), method=Image.Resampling.LANCZOS, centering=(.5, .5))
+        full = _enhance_uploaded_image(full)
+        return Image.blend(canvas.convert("RGB"), full, .92)
+
+    if layout == "split":
+        media_h = int(height * .58)
+        media = ImageOps.fit(original, (width, media_h), method=Image.Resampling.LANCZOS, centering=(.5, .5))
+        media = _enhance_uploaded_image(media)
+        canvas.alpha_composite(media.convert("RGBA"), (0, 0))
+        panel = Image.new("RGBA", (width, height - media_h + 80), (3, 8, 17, 218))
+        canvas.alpha_composite(panel, (0, media_h - 80))
+        return canvas.convert("RGB")
+
+    if layout == "quote":
+        dark = Image.new("RGBA", (width, height), (4, 8, 17, 242))
+        canvas = Image.blend(canvas, dark, .74)
+        safe_w, safe_h = int(width * .78), int(height * .34)
+        card = original.copy()
+        card.thumbnail((safe_w, safe_h), Image.Resampling.LANCZOS)
+        card = ImageEnhance.Brightness(_enhance_uploaded_image(card)).enhance(.82)
+        _paste_shadowed(canvas, card, (width - card.width) // 2, int(height * .12), radius=24)
+        return canvas.convert("RGB")
+
+    if layout == "player":
+        safe_w, safe_h = int(width * .88), int(height * .52)
+        card = original.copy()
+        card.thumbnail((safe_w, safe_h), Image.Resampling.LANCZOS)
+        card = _enhance_uploaded_image(card)
+        x = (width - card.width) // 2
+        y = int(height * .13)
+        frame = Image.new("RGBA", (card.width + 28, card.height + 28), (255, 255, 255, 0))
+        fdraw = ImageDraw.Draw(frame)
+        fdraw.rounded_rectangle((0, 0, frame.width - 1, frame.height - 1), radius=34, fill=(255, 255, 255, 20), outline=(255, 255, 255, 62), width=2)
+        canvas.alpha_composite(frame, (x - 14, y - 14))
+        _paste_shadowed(canvas, card, x, y, radius=26)
+        hud = ImageDraw.Draw(canvas)
+        hud.ellipse((int(width * .78), int(height * .075), int(width * .80), int(height * .087)), fill=(255, 68, 68, 235))
+        hud.text((int(width * .81), int(height * .065)), "REC", font=_get_font(max(16, width // 38)), fill=(255, 255, 255, 225))
+        return canvas.convert("RGB")
+
+    safe_w = int(width * .92)
+    safe_h = int(height * .70)
     foreground = original.copy()
     foreground.thumbnail((safe_w, safe_h), Image.Resampling.LANCZOS)
-    foreground = ImageEnhance.Contrast(foreground).enhance(1.08)
-    foreground = ImageEnhance.Color(foreground).enhance(1.08)
-    foreground = ImageEnhance.Brightness(foreground).enhance(1.04)
-
-    canvas = background.convert("RGBA")
-    shadow = Image.new("RGBA", foreground.size, (0, 0, 0, 0))
-    shadow_alpha = Image.new("L", foreground.size, 120)
-    shadow.putalpha(shadow_alpha.filter(ImageFilter.GaussianBlur(radius=18)))
+    foreground = _enhance_uploaded_image(foreground)
     x = (width - foreground.width) // 2
-    y = int(height * .43 - foreground.height / 2)
-    canvas.alpha_composite(shadow, (x, y + 18))
-    canvas.alpha_composite(foreground.convert("RGBA"), (x, y))
+    y = int(height * .38 - foreground.height / 2)
+    _paste_shadowed(canvas, foreground, x, y, radius=26)
+    lower = Image.new("RGBA", (width, int(height * .34)), (0, 0, 0, 104))
+    canvas.alpha_composite(lower, (0, int(height * .66)))
     return canvas.convert("RGB")
 
 def _background_gradient(width: int, height: int, top, bottom):
@@ -198,7 +261,17 @@ def _draw_reel_text(draw, scene, scene_index: int, accent, width: int, height: i
         lines = _wrap_text(text, font, max_width, width, height)[:3]
     line_height = int(base_size * 1.02)
     block_h = len(lines) * line_height
-    y = int(height * (.43 if scene_index == 1 else .48)) - block_h // 2
+    layout = _scene_attr(scene, "visual_layout", "auto")
+    has_media = bool(_scene_attr(scene, "image_url", ""))
+    if has_media and layout in {"split", "poster", "player"}:
+        anchor = .73
+    elif has_media and layout == "quote":
+        anchor = .58
+    elif has_media:
+        anchor = .48
+    else:
+        anchor = .43 if scene_index == 1 else .48
+    y = int(height * anchor) - block_h // 2
     emphasis_words = [word.upper() for word in _scene_attr(scene, "text_emphasis", [])]
     if not emphasis_words and lines and lines[0].split():
         emphasis_words = [lines[0].split()[0].strip(".,!?;:")]
@@ -240,7 +313,7 @@ def _apply_cinematic_grade(img: Image.Image, scene, width: int, height: int) -> 
 def _draw_scene(storyboard: StoryboardPlan, scene_index: int, tone: str, visual_style: str, output_path: Path, width: int, height: int):
     scene = storyboard.scenes[scene_index - 1]
     top, bottom, accent = TONE_BACKGROUNDS.get(tone, TONE_BACKGROUNDS["cinematic"])
-    media_image = _load_scene_image(scene.image_url, width, height)
+    media_image = _load_scene_image(scene.image_url, width, height, _scene_attr(scene, "visual_layout", "auto"))
     img = media_image or _background_gradient(width, height, top, bottom)
     if media_image:
         img = _apply_photo_overlay(img, accent, width, height)
