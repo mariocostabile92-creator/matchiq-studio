@@ -131,7 +131,7 @@ authForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     authSubmitBtn.disabled = true;
-    authStatus.textContent = authMode === "register" ? "Creo il workspace..." : "Accesso in corso...";
+    authStatus.textContent = authMode === "register" ? "Creo o recupero il workspace..." : "Accesso in corso...";
     const payload = {
       email: authEmail.value.trim(),
       password: authPassword.value,
@@ -140,6 +140,7 @@ authForm?.addEventListener("submit", async (event) => {
       ? await registerUser({...payload, name: authName.value.trim() || "Creator"})
       : await loginUser(payload);
     authForm.reset();
+    if (authStatus && data.message) authStatus.textContent = data.message;
     showApp(data.user);
   } catch (error) {
     authStatus.textContent = error.message;
