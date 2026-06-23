@@ -781,6 +781,10 @@ function applyStudioTemplate(templateName) {
       tone: "cinematic",
       visualStyle: "auto",
       pacing: "balanced",
+      durationSeconds: 20,
+      musicMood: "cinematic",
+      voicePreset: "motivational",
+      plan: "Visione, problema, sistema, risultato, CTA."
     },
     product: {
       brandName: "MatchIQ Studio",
@@ -790,6 +794,10 @@ function applyStudioTemplate(templateName) {
       tone: "premium",
       visualStyle: "editorial",
       pacing: "balanced",
+      durationSeconds: 18,
+      musicMood: "premium",
+      voicePreset: "premium",
+      plan: "Benefit, problema, soluzione, prova, CTA."
     },
     linkedin: {
       brandName: "MatchIQ Studio",
@@ -799,6 +807,10 @@ function applyStudioTemplate(templateName) {
       tone: "startup",
       visualStyle: "data",
       pacing: "balanced",
+      durationSeconds: 20,
+      musicMood: "startup",
+      voicePreset: "natural",
+      plan: "Insight, contesto, idea forte, credibilita, CTA."
     },
     sport: {
       brandName: "MatchIQ Studio",
@@ -808,6 +820,10 @@ function applyStudioTemplate(templateName) {
       tone: "premium",
       visualStyle: "sport",
       pacing: "fast",
+      durationSeconds: 15,
+      musicMood: "sport",
+      voicePreset: "energetic",
+      plan: "Hook match day, momento chiave, insight, identita club, CTA."
     },
     sponsor: {
       brandName: "MatchIQ Studio",
@@ -817,6 +833,10 @@ function applyStudioTemplate(templateName) {
       tone: "provocative",
       visualStyle: "editorial",
       pacing: "balanced",
+      durationSeconds: 18,
+      musicMood: "premium",
+      voicePreset: "premium",
+      plan: "Valore, problema, soluzione, prova partner, CTA."
     },
     offer: {
       brandName: "MatchIQ Studio",
@@ -826,6 +846,10 @@ function applyStudioTemplate(templateName) {
       tone: "provocative",
       visualStyle: "auto",
       pacing: "fast",
+      durationSeconds: 14,
+      musicMood: "startup",
+      voicePreset: "energetic",
+      plan: "Offerta, urgenza, beneficio, prova, CTA."
     },
     beforeAfter: {
       brandName: "MatchIQ Studio",
@@ -835,19 +859,30 @@ function applyStudioTemplate(templateName) {
       tone: "cinematic",
       visualStyle: "auto",
       pacing: "balanced",
+      durationSeconds: 18,
+      musicMood: "emotional",
+      voicePreset: "natural",
+      plan: "Prima, frizione, trasformazione, risultato, CTA."
     },
   };
   const template = templates[templateName] || templates.founder;
-  Object.entries(template).forEach(([id, value]) => {
+  const fields = ["brandName", "title", "topic", "callToAction", "tone", "visualStyle", "pacing", "durationSeconds"];
+  fields.forEach((id) => {
     const field = document.getElementById(id);
-    if (field) field.value = value;
+    if (field && template[id] !== undefined) field.value = template[id];
   });
-
+  if (musicMood) musicMood.value = template.musicMood || "cinematic";
+  if (musicEnabled) musicEnabled.checked = true;
+  applyVoicePreset(template.voicePreset || "natural");
+  currentStoryboard = null;
+  selectedSceneIndex = 0;
+  updateTimeline(buildDraftStoryboard(buildPayload()));
   updatePreview();
-  setStatus("Template caricato. Puoi modificarlo o creare il Reel MP4.", "Template");
+  if (directorPlan) directorPlan.textContent = template.plan || "Hook forte, sviluppo, prova visiva e CTA.";
+  if (directorHook) directorHook.textContent = template.title;
+  setStatus(`Template ${templateName} caricato: ritmo, voce, musica e scene impostati.`, "Template");
   scrollToStudioSection("project");
 }
-
 
 function applyVoicePreset(preset) {
   const presets = {
