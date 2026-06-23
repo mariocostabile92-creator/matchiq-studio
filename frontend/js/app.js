@@ -114,11 +114,13 @@ function showAuth(message = "Accedi o crea un account per continuare.") {
 }
 
 async function bootAuth() {
+  const cachedUser = typeof getStoredUser === "function" ? getStoredUser() : null;
+  if (cachedUser) showApp(cachedUser);
   try {
     const data = await getCurrentUser();
-    showApp(data.user);
+    if (data?.user) showApp(data.user);
   } catch {
-    showAuth("Accedi oppure registrati per creare il tuo workspace.");
+    if (!cachedUser) showAuth("Accedi oppure registrati per creare il tuo workspace.");
   }
 }
 
@@ -148,7 +150,9 @@ authForm?.addEventListener("submit", async (event) => {
 });
 
 logoutBtn?.addEventListener("click", async () => {
-  await logoutUser().catch(() => null);
+  await logoutUser().catch(() => {
+    if (typeof clearStoredSession === "function") clearStoredSession();
+  });
   currentUser = null;
   showAuth("Sessione chiusa.");
 });

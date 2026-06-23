@@ -1,3 +1,30 @@
+const MATCHIQ_SESSION_KEY = "matchiq_session_token";
+const MATCHIQ_USER_KEY = "matchiq_user";
+
+function getStoredSessionToken() {
+  return localStorage.getItem(MATCHIQ_SESSION_KEY) || "";
+}
+
+function setStoredSession(data) {
+  if (data?.session_token) localStorage.setItem(MATCHIQ_SESSION_KEY, data.session_token);
+  if (data?.user) localStorage.setItem(MATCHIQ_USER_KEY, JSON.stringify(data.user));
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(MATCHIQ_SESSION_KEY);
+  localStorage.removeItem(MATCHIQ_USER_KEY);
+}
+
+function getStoredUser() {
+  try { return JSON.parse(localStorage.getItem(MATCHIQ_USER_KEY) || "null"); }
+  catch { return null; }
+}
+
+function authHeaders(extra = {}) {
+  const token = getStoredSessionToken();
+  return token ? {...extra, Authorization: `Bearer ${token}`} : extra;
+}
+
 async function createReel(payload) {
   const response = await fetch("/api/reels/create", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
@@ -82,29 +109,33 @@ async function regenerateScene(payload) {
 
 
 async function loginUser(payload) {
-  const response = await fetch("/api/auth/login", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await fetch("/api/auth/login", {method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || data.message || "Login non riuscito.");
+  setStoredSession(data);
   return data;
 }
 
 async function registerUser(payload) {
-  const response = await fetch("/api/auth/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await fetch("/api/auth/register", {method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || data.message || "Registrazione non riuscita.");
+  setStoredSession(data);
   return data;
 }
 
 async function getCurrentUser() {
-  const response = await fetch("/api/auth/me");
+  const response = await fetch("/api/auth/me", {credentials:"include", headers: authHeaders()});
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || "Non autenticato.");
+  setStoredSession(data);
   return data;
 }
 
 async function logoutUser() {
-  const response = await fetch("/api/auth/logout", {method:"POST"});
+  const response = await fetch("/api/auth/logout", {method:"POST",credentials:"include",headers:authHeaders()});
   const data = await response.json();
+  clearStoredSession();
   if (!response.ok) throw new Error(data.detail || "Logout non riuscito.");
   return data;
 }

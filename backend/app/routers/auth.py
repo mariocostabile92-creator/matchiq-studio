@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import json
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -73,7 +73,7 @@ def _public_user(user: dict) -> dict:
     }
 
 
-def _create_session(response: Response, user_id: str) -> None:
+def _create_session(response: Response, user_id: str) -> str:
     sessions = _read_json(SESSIONS_PATH, {})
     token = secrets.token_urlsafe(32)
     sessions[token] = {
@@ -81,18 +81,32 @@ def _create_session(response: Response, user_id: str) -> None:
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     _write_json(SESSIONS_PATH, sessions)
+    max_age = 60 * 60 * 24 * 180
+    expires = datetime.now(timezone.utc) + timedelta(seconds=max_age)
     response.set_cookie(
         "matchiq_session",
         token,
         httponly=True,
         samesite="lax",
         secure=False,
-        max_age=60 * 60 * 24 * 30,
+        max_age=max_age,
+        expires=expires,
     )
+    return token
+
+
+def _session_token_from_request(request: Request) -> str | None:
+    token = request.cookies.get("matchiq_session")
+    if token:
+        return token
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        return auth_header.split(" ", 1)[1].strip()
+    return request.headers.get("x-matchiq-session")
 
 
 def _current_user_from_request(request: Request) -> dict | None:
-    token = request.cookies.get("matchiq_session")
+    token = _session_token_from_request(request)
     if not token:
         return None
     sessions = _read_json(SESSIONS_PATH, {})
@@ -121,8 +135,8 @@ def register(payload: RegisterRequest, response: Response):
     }
     users[email] = user
     _write_json(USERS_PATH, users)
-    _create_session(response, user["id"])
-    return {"success": True, "user": _public_user(user)}
+    session_token = _create_session(response, user["id"])
+    return {"success": True, "user": _public_user(user), "session_token": session_token}
 
 
 @router.post("/login")
@@ -132,8 +146,8 @@ def login(payload: LoginRequest, response: Response):
     user = users.get(email)
     if not user or not _verify_password(payload.password, user.get("password_hash", "")):
         return {"success": False, "message": "Email o password non corretti. Se e il primo accesso usa Registrazione."}
-    _create_session(response, user["id"])
-    return {"success": True, "user": _public_user(user)}
+    session_token = _create_session(response, user["id"])
+    return {"success": True, "user": _public_user(user), "session_token": session_token}
 
 
 @router.get("/me")
@@ -146,7 +160,7 @@ def me(request: Request):
 
 @router.post("/logout")
 def logout(request: Request, response: Response):
-    token = request.cookies.get("matchiq_session")
+    token = _session_token_from_request(request)
     sessions = _read_json(SESSIONS_PATH, {})
     if token in sessions:
         del sessions[token]

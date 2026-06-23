@@ -95,8 +95,8 @@ def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.I
     background = ImageEnhance.Brightness(background).enhance(.58)
     background = ImageEnhance.Color(background).enhance(1.10)
 
-    safe_w = int(width * .92)
-    safe_h = int(height * .78)
+    safe_w = int(width * .96)
+    safe_h = int(height * .86)
     foreground = original.copy()
     foreground.thumbnail((safe_w, safe_h), Image.Resampling.LANCZOS)
     foreground = ImageEnhance.Contrast(foreground).enhance(1.08)
@@ -108,7 +108,7 @@ def _load_scene_image(image_url: str | None, width: int, height: int) -> Image.I
     shadow_alpha = Image.new("L", foreground.size, 120)
     shadow.putalpha(shadow_alpha.filter(ImageFilter.GaussianBlur(radius=18)))
     x = (width - foreground.width) // 2
-    y = int(height * .39 - foreground.height / 2)
+    y = int(height * .43 - foreground.height / 2)
     canvas.alpha_composite(shadow, (x, y + 18))
     canvas.alpha_composite(foreground.convert("RGBA"), (x, y))
     return canvas.convert("RGB")
@@ -187,9 +187,15 @@ def _get_brand_asset(width: int, full: bool = False):
 def _draw_reel_text(draw, scene, scene_index: int, accent, width: int, height: int):
     text = _smart_reel_text(scene, scene_index)
     max_width = int(width * .84)
-    base_size = int(width * (.155 if scene_index == 1 else .135))
-    font = _get_font(max(48, base_size))
+    base_size = int(width * (.135 if scene_index == 1 else .118))
+    font_size = max(42, base_size)
+    font = _get_font(font_size)
     lines = _wrap_text(text, font, max_width, width, height)[:3]
+    measure = ImageDraw.Draw(Image.new("RGB", (width, height)))
+    while font_size > 34 and any((measure.textbbox((0, 0), line, font=font)[2] - measure.textbbox((0, 0), line, font=font)[0]) > max_width for line in lines):
+        font_size -= 4
+        font = _get_font(font_size)
+        lines = _wrap_text(text, font, max_width, width, height)[:3]
     line_height = int(base_size * 1.02)
     block_h = len(lines) * line_height
     y = int(height * (.43 if scene_index == 1 else .48)) - block_h // 2
@@ -210,22 +216,7 @@ def _draw_reel_text(draw, scene, scene_index: int, accent, width: int, height: i
             token_w = draw.textbbox((0, 0), f"{token} ", font=font)[2]
             current_x += token_w
         y += line_height
-    voice = (scene.voice_over or scene.subtitle or "").strip()
-    if voice:
-        caption_font = _get_font(max(22, width // 28))
-        caption = " ".join(voice.split())
-        if len(caption.split()) > 12:
-            caption = " ".join(caption.split()[:12]).rstrip(".,;:") + "."
-        cap_lines = _wrap_text(caption, caption_font, int(width * .80), width, height)[:2]
-        cap_x = int(width * .08)
-        cap_y = int(height * .79)
-        cap_w = int(width * .84)
-        cap_h = 52 + len(cap_lines) * int(width * .052)
-        draw.rounded_rectangle((cap_x, cap_y, cap_x + cap_w, cap_y + cap_h), radius=24, fill=(0, 0, 0), outline=tuple(min(255, int(v * 1.18)) for v in accent), width=3)
-        text_y = cap_y + 22
-        for line in cap_lines:
-            draw.text((cap_x + 24, text_y), line, font=caption_font, fill=(235, 242, 252))
-            text_y += int(width * .052)
+    # The live subtitle layer handles spoken text during motion.
 
 
 def _apply_cinematic_grade(img: Image.Image, scene, width: int, height: int) -> Image.Image:
@@ -257,7 +248,8 @@ def _draw_scene(storyboard: StoryboardPlan, scene_index: int, tone: str, visual_
     draw = ImageDraw.Draw(img)
     if not media_image:
         _draw_fast_visual_motif(draw, scene, accent, width, height)
-    _draw_particles(draw, scene, accent, width, height)
+    if not media_image:
+        _draw_particles(draw, scene, accent, width, height)
     _draw_reel_text(draw, scene, scene_index, accent, width, height)
     icon = _get_brand_asset(width, full=(scene_index == len(storyboard.scenes)))
     if icon:
@@ -332,21 +324,32 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
     caption = " ".join((scene.voice_over or scene.subtitle or "").split())
     if caption:
         words = caption.split()
-        shown = max(1, min(len(words), int(len(words) * min(1, progress * 1.25)) + 1))
+        shown = max(1, min(len(words), int(len(words) * min(1, progress * 1.35)) + 1))
         live_caption = " ".join(words[:shown])
-        if len(live_caption.split()) > 9:
-            live_caption = " ".join(live_caption.split()[-9:])
-        font = _get_font(max(24, width // 25))
-        lines = _wrap_text(live_caption, font, int(width * .78), width, height)[-2:]
-        cap_w = int(width * .86)
-        cap_x = int(width * .07)
-        cap_h = 58 + len(lines) * int(width * .052)
-        cap_y = int(height * (.77 + .018 * (1 - min(1, progress * 5))))
-        draw.rounded_rectangle((cap_x, cap_y, cap_x + cap_w, cap_y + cap_h), radius=24, fill=(0, 0, 0, 150), outline=(*accent, int(80 + 60 * pulse)), width=2)
-        tx_y = cap_y + 22
+        if len(live_caption.split()) > 8:
+            live_caption = " ".join(live_caption.split()[-8:])
+        font = _get_font(max(34, width // 18))
+        lines = _wrap_text(live_caption.upper(), font, int(width * .82), width, height)[-2:]
+        gradient = Image.new("RGBA", (width, int(height * .28)), (0, 0, 0, 0))
+        gdraw = ImageDraw.Draw(gradient)
+        for yy in range(gradient.height):
+            alpha = int(170 * (yy / max(1, gradient.height - 1)))
+            gdraw.line((0, yy, width, yy), fill=(0, 0, 0, alpha))
+        overlay.alpha_composite(gradient, (0, height - gradient.height))
+        line_h = int(width * .074)
+        block_h = len(lines) * line_h
+        tx_y = int(height * .80) - block_h // 2 + int(10 * (1 - min(1, progress * 5)))
         for line in lines:
-            draw.text((cap_x + 24, tx_y), line, font=font, fill=(244, 248, 255, 245))
-            tx_y += int(width * .052)
+            bbox = draw.textbbox((0, 0), line, font=font)
+            tx_x = (width - (bbox[2] - bbox[0])) // 2
+            for dx, dy in [(-2, 3), (2, 3), (0, 5)]:
+                draw.text((tx_x + dx, tx_y + dy), line, font=font, fill=(0, 0, 0, 210))
+            draw.text((tx_x, tx_y), line, font=font, fill=(248, 251, 255, 245))
+            tx_y += line_h
+        progress_w = int(width * .42 * min(1, progress * 1.08))
+        bar_x = (width - int(width * .42)) // 2
+        bar_y = int(height * .89)
+        draw.rounded_rectangle((bar_x, bar_y, bar_x + progress_w, bar_y + 5), radius=3, fill=(*accent, 210))
 
     if t < min(.26, duration * .15):
         p = 1 - (t / min(.26, duration * .15))
@@ -362,8 +365,9 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
     duration = scene.duration_seconds
     motion = _motion_kind(scene)
     preset = _effect_preset(scene, visual_style)
-    base_zoom = {"social": 1.22, "captions": 1.18, "neon": 1.24, "sport": 1.20, "data": 1.16, "editorial": 1.12}.get(preset, 1.16)
-    zoom_level = max(base_zoom, min(1.72, float(_scene_attr(scene, "zoom_level", base_zoom))))
+    base_zoom = {"social": 1.10, "captions": 1.08, "neon": 1.12, "sport": 1.10, "data": 1.08, "editorial": 1.06}.get(preset, 1.08)
+    requested_zoom = float(_scene_attr(scene, "zoom_level", base_zoom))
+    zoom_level = max(base_zoom, min(1.22, requested_zoom))
     source = Image.open(scene_path).convert("RGB")
     zoomed_width = int(width * zoom_level)
     zoomed_height = int(height * zoom_level)
@@ -375,15 +379,15 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
     def crop_origin(t):
         progress = _ease(min(1.0, (t / duration) * _pacing_factor(pacing) * speed_factor))
         if motion == "pan":
-            return int(max_x * (.05 + .90 * progress)), int(max_y * (.48 + .06 * progress))
+            return int(max_x * (.34 + .32 * progress)), int(max_y * (.48 + .04 * progress))
         if motion == "scan":
-            return int(max_x * (.44 + .12 * progress)), int(max_y * (.08 + .84 * progress))
+            return int(max_x * (.45 + .10 * progress)), int(max_y * (.32 + .36 * progress))
         if motion == "reveal":
-            return int(max_x * (.50 + .14 * progress)), int(max_y * (.62 - .30 * progress))
+            return int(max_x * (.48 + .08 * progress)), int(max_y * (.56 - .16 * progress))
         if preset == "social":
             punch = .5 + .5 * np.sin(progress * np.pi * 3)
-            return int(max_x * (.50 + .12 * progress + .03 * punch)), int(max_y * (.58 - .24 * progress))
-        return int(max_x * (.45 + .18 * progress)), int(max_y * (.60 - .28 * progress))
+            return int(max_x * (.48 + .06 * progress + .015 * punch)), int(max_y * (.54 - .10 * progress))
+        return int(max_x * (.46 + .08 * progress)), int(max_y * (.54 - .12 * progress))
 
     def make_frame(t):
         x, y = crop_origin(t)
