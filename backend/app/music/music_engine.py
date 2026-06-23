@@ -16,9 +16,12 @@ MOOD_PRESETS = {
 
 def _as_stereo(signal, pan=0.0):
     audio = np.asarray(signal, dtype=float)
-    left = audio * (1 - max(0, pan) * .25)
-    right = audio * (1 + min(0, pan) * .25)
-    return np.column_stack((left, right))
+    pan_value = np.asarray(pan, dtype=float)
+    left_gain = 1 - np.maximum(0, pan_value) * .25
+    right_gain = 1 + np.minimum(0, pan_value) * .25
+    if audio.ndim == 0:
+        return np.array([float(audio * left_gain), float(audio * right_gain)])
+    return np.column_stack((audio * left_gain, audio * right_gain))
 
 
 def _sine(time, freq, amount=1.0):
