@@ -87,7 +87,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V5.9 Bulk Video Media</span>
+        <span>Studio V6.0 Pro Export</span>
         <strong>Template Engine AI</strong>
         <p>Brief semplice, scene modificabili, immagini reali, voce, preview e render MP4.</p>
       </div>
@@ -111,7 +111,7 @@
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V5.9 Bulk Video Media</span>
+          <span class="hero-badge">Studio V6.0 Pro Export</span>
           <h2>Il tuo studio AI per creare reel.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
@@ -354,7 +354,7 @@
               <p class="eyebrow">Progetto selezionato</p>
               <h2>Founder Reel</h2>
             </div>
-            <span class="status-pill">V5.9 Bulk Video Media</span>
+            <span class="status-pill">V6.0 Pro Export</span>
           </div>
 
           <div class="form-grid">
@@ -422,11 +422,21 @@
             <label>
               Musica
               <select id="musicMood">
-                <option value="cinematic" selected>Cinematic</option>
-                <option value="premium">Premium</option>
-                <option value="sport">Sport</option>
+                <option value="cinematic_lift" selected>Cinematic Lift</option>
+                <option value="sport_hype">Sport Hype</option>
+                <option value="club_energy">Club Energy</option>
+                <option value="luxury_minimal">Luxury Minimal</option>
+                <option value="deep_focus">Deep Focus</option>
+                <option value="bright_launch">Bright Launch</option>
                 <option value="emotional">Emotional</option>
-                <option value="startup">Startup</option>
+                <option value="premium">Premium Legacy</option>
+              </select>
+            </label>
+            <label>
+              Qualità export
+              <select id="exportQuality">
+                <option value="draft">Anteprima veloce 720p</option>
+                <option value="pro_1080p" selected>Pro 1080p social</option>
               </select>
             </label>
             <label class="toggle-row">
@@ -449,7 +459,7 @@
               Velocità voce
               <input id="voiceRate" type="range" min="-4" max="3" step="1" value="-1" />
             </label>
-            <div class="audio-note">Il voice-over viene inserito nel file MP4. La musica e pulita, senza linee visive nel video, e resta mixata sotto la voce.</div>
+            <div class="audio-note">Il voice-over viene inserito nel file MP4. Scegli musica e qualità export: anteprima veloce o Pro 1080p social.</div>
           </div>
 
           <div class="command-row">
@@ -652,8 +662,8 @@
     <a href="#render" data-nav-target="render"><span>⬢</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=59"></script>
-  <script src="/js/app.js?v=59"></script>
-  <script src="/js/hook-engine.js?v=59"></script>
+  <script src="/js/api.js?v=60"></script>
+  <script src="/js/app.js?v=60"></script>
+  <script src="/js/hook-engine.js?v=60"></script>
 </body>
 </html>

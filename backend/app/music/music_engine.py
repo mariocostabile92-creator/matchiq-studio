@@ -11,6 +11,12 @@ MOOD_PRESETS = {
     "sport": {"root": 55, "third": 82.41, "fifth": 110, "top": 220, "bpm": 116, "drive": .70, "pad": .30},
     "emotional": {"root": 43.65, "third": 55, "fifth": 65.41, "top": 164.81, "bpm": 78, "drive": .22, "pad": .58},
     "provocative": {"root": 55, "third": 69.3, "fifth": 82.41, "top": 196, "bpm": 108, "drive": .64, "pad": .35},
+    "cinematic_lift": {"root": 55, "third": 65.41, "fifth": 82.41, "top": 196, "bpm": 96, "drive": .46, "pad": .50},
+    "sport_hype": {"root": 55, "third": 82.41, "fifth": 110, "top": 246.94, "bpm": 124, "drive": .78, "pad": .26},
+    "club_energy": {"root": 65.41, "third": 82.41, "fifth": 98, "top": 261.63, "bpm": 118, "drive": .66, "pad": .30},
+    "luxury_minimal": {"root": 49, "third": 61.74, "fifth": 73.42, "top": 146.83, "bpm": 82, "drive": .24, "pad": .62},
+    "deep_focus": {"root": 43.65, "third": 55, "fifth": 65.41, "top": 130.81, "bpm": 74, "drive": .18, "pad": .70},
+    "bright_launch": {"root": 65.41, "third": 82.41, "fifth": 98, "top": 220, "bpm": 108, "drive": .52, "pad": .36},
 }
 
 
@@ -48,7 +54,7 @@ def build_music_bed(tone: str, duration: float, volume: float = 0.12, mood: str 
     selected = (mood or tone or "cinematic").lower()
     preset = MOOD_PRESETS.get(selected, MOOD_PRESETS.get(tone, MOOD_PRESETS["cinematic"]))
     bpm = preset["bpm"]
-    safe_volume = max(0.0, min(0.22, volume))
+    safe_volume = max(0.0, min(0.26, volume))
 
     def frame_function(t):
         time = np.asarray(t, dtype=float)

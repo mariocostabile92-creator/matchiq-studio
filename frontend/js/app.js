@@ -40,6 +40,7 @@ const voicePreviewStatus = document.getElementById("voicePreviewStatus");
 const musicEnabled = document.getElementById("musicEnabled");
 const musicVolume = document.getElementById("musicVolume");
 const musicMood = document.getElementById("musicMood");
+const exportQuality = document.getElementById("exportQuality");
 const voiceEnabled = document.getElementById("voiceEnabled");
 const voiceVolume = document.getElementById("voiceVolume");
 const voiceStyle = document.getElementById("voiceStyle");
@@ -219,7 +220,8 @@ function getAudioSettings() {
   return {
     music_enabled: Boolean(musicEnabled?.checked),
     music_volume: Number(musicVolume?.value || 0.14),
-    music_mood: musicMood?.value || "cinematic",
+    music_mood: musicMood?.value || "cinematic_lift",
+    export_quality: exportQuality?.value || "pro_1080p",
     voice_enabled: Boolean(voiceEnabled?.checked),
     voice_volume: Number(voiceVolume?.value || 0.95),
     voice_style: voiceStyle?.value || "studio",
@@ -712,7 +714,8 @@ async function generateReel() {
     }
 
     updateRenderStation(34, "Voice-over e motion", "Storyboard pronto. Preparo voice-over, scene e movimento.");
-    setStatus("Storyboard pronto. Avvio render MP4 draft...", "Render");
+    const isProExport = (exportQuality?.value || "pro_1080p") !== "draft";
+    setStatus(isProExport ? "Storyboard pronto. Avvio export Pro 1080p..." : "Storyboard pronto. Avvio anteprima veloce...", "Render");
 
     const data = await renderStoryboard({
       storyboard: currentStoryboard,
@@ -776,11 +779,12 @@ sceneMotionPreset.addEventListener("change", () => {
   updatePreviewFromScene();
 });
 
-[musicEnabled, musicVolume, musicMood, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
+[musicEnabled, musicVolume, musicMood, exportQuality, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
   input?.addEventListener("input", () => {
-    const audioState = musicEnabled?.checked ? "Musica demo attiva a volume basso" : "Musica demo disattivata";
+    const audioState = musicEnabled?.checked ? `Musica ${musicMood?.selectedOptions?.[0]?.textContent || "Cinematic"} attiva` : "Musica disattivata";
+    const qualityState = (exportQuality?.value || "pro_1080p") === "draft" ? "Anteprima 720p" : "Export Pro 1080p";
     const voiceState = voiceEnabled?.checked ? `Voice-over ${voiceStyle?.value || "studio"} attivo nell'MP4` : "Voice-over disattivato";
-    setStatus(`${audioState}. ${voiceState}.`, "Audio");
+    setStatus(`${audioState}. ${voiceState}. ${qualityState}.`, "Audio");
   });
 });
 
@@ -850,7 +854,7 @@ function applyStudioTemplate(templateName) {
       visualStyle: "auto",
       pacing: "balanced",
       durationSeconds: 20,
-      musicMood: "cinematic",
+      musicMood: "cinematic_lift",
       voicePreset: "motivational",
       plan: "Visione, problema, sistema, risultato, CTA."
     },
@@ -876,7 +880,7 @@ function applyStudioTemplate(templateName) {
       visualStyle: "data",
       pacing: "balanced",
       durationSeconds: 20,
-      musicMood: "startup",
+      musicMood: "bright_launch",
       voicePreset: "natural",
       plan: "Insight, contesto, idea forte, credibilita, CTA."
     },
@@ -889,7 +893,7 @@ function applyStudioTemplate(templateName) {
       visualStyle: "sport",
       pacing: "fast",
       durationSeconds: 15,
-      musicMood: "sport",
+      musicMood: "sport_hype",
       voicePreset: "energetic",
       plan: "Hook match day, momento chiave, insight, identita club, CTA."
     },
@@ -915,7 +919,7 @@ function applyStudioTemplate(templateName) {
       visualStyle: "auto",
       pacing: "fast",
       durationSeconds: 14,
-      musicMood: "startup",
+      musicMood: "bright_launch",
       voicePreset: "energetic",
       plan: "Offerta, urgenza, beneficio, prova, CTA."
     },
@@ -966,7 +970,7 @@ function applyVoicePreset(preset) {
   if (voiceRate) voiceRate.value = config.rate;
   if (voiceVolume) voiceVolume.value = config.voice;
   if (musicVolume) musicVolume.value = config.music;
-  if (musicMood) musicMood.value = preset === "motivational" ? "emotional" : preset === "energetic" ? "sport" : preset === "premium" ? "premium" : "cinematic";
+  if (musicMood) musicMood.value = preset === "motivational" ? "emotional" : preset === "energetic" ? "sport_hype" : preset === "premium" ? "luxury_minimal" : "cinematic_lift";
   document.querySelectorAll("[data-voice-preset]").forEach((button) => {
     button.classList.toggle("is-selected", button.dataset.voicePreset === preset);
   });

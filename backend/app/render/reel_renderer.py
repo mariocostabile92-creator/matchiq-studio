@@ -518,9 +518,12 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
     return VideoClip(frame_function=make_frame, duration=duration)
 
 def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = True, music_volume: float = 0.12, music_mood: str = "cinematic", voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
-    width, height = (DRAFT_WIDTH, DRAFT_HEIGHT) if quality == "draft" else (FINAL_WIDTH, FINAL_HEIGHT)
-    fps = 20 if quality == "draft" else 24
-    preset = "ultrafast" if quality == "draft" else "medium"
+    is_draft = quality == "draft"
+    width, height = (DRAFT_WIDTH, DRAFT_HEIGHT) if is_draft else (FINAL_WIDTH, FINAL_HEIGHT)
+    fps = 20 if is_draft else 30
+    preset = "ultrafast" if is_draft else "medium"
+    video_bitrate = "2800k" if is_draft else "9500k"
+    audio_bitrate = "128k" if is_draft else "192k"
     reel_id = uuid4().hex[:10]
     work_dir = RENDERS_DIR / reel_id
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -537,7 +540,8 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
             _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
             clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing, visual_style, accent))
     if on_progress:
-        on_progress(82, "Sto esportando il file MP4 in modalita' draft...")
+        mode_label = "anteprima veloce" if is_draft else "qualita Pro 1080p"
+        on_progress(82, f"Sto esportando il file MP4 in {mode_label}...")
     final = concatenate_videoclips(clips, method="compose")
     total_duration = sum(scene.duration_seconds for scene in storyboard.scenes)
     audio_tracks = []
@@ -545,7 +549,7 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     if music_enabled:
         if on_progress:
             on_progress(88, "Sto aggiungendo musica e mix audio...")
-        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(max(music_volume, 0.10), 0.16), mood=music_mood)
+        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(max(music_volume, 0.08), 0.24), mood=music_mood)
         audio_tracks.append(music_audio)
         audio_clips_to_close.append(music_audio)
     if voice_enabled:
@@ -572,7 +576,7 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
         audio_clips_to_close.append(mixed_audio)
     filename = f"matchiq_studio_reel_{reel_id}.mp4"
     output_path = RENDERS_DIR / filename
-    final.write_videofile(str(output_path), fps=fps, codec="libx264", audio=bool(audio_tracks), audio_codec="aac" if audio_tracks else None, preset=preset, threads=4, logger=None)
+    final.write_videofile(str(output_path), fps=fps, codec="libx264", audio=bool(audio_tracks), audio_codec="aac" if audio_tracks else None, audio_bitrate=audio_bitrate if audio_tracks else None, bitrate=video_bitrate, preset=preset, threads=4, logger=None)
     final.close()
     for audio_clip in audio_clips_to_close:
         audio_clip.close()
