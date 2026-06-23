@@ -47,6 +47,7 @@ const voiceVolume = document.getElementById("voiceVolume");
 const voiceStyle = document.getElementById("voiceStyle");
 const voiceRate = document.getElementById("voiceRate");
 const mediaUploadInput = document.getElementById("mediaUploadInput");
+const musicUploadInput = document.getElementById("musicUploadInput");
 const mediaUploadStatus = document.getElementById("mediaUploadStatus");
 const mediaAssetGrid = document.getElementById("mediaAssetGrid");
 const autoAssignMediaBtn = document.getElementById("autoAssignMediaBtn");
@@ -333,7 +334,7 @@ function renderMediaAssets() {
   refreshMusicTrackOptions();
 
   if (!mediaAssets.length) {
-    mediaAssetGrid.innerHTML = "<div><span></span><b>Nessun media</b><small>Carica immagini, video o audio</small></div>";
+    mediaAssetGrid.innerHTML = "<div><span></span><b>Nessun media</b><small>Carica immagini, video o musica</small></div>";
     return;
   }
 
@@ -430,12 +431,13 @@ async function loadMediaAssets() {
   }
 }
 
-async function handleMediaUpload() {
-  const files = Array.from(mediaUploadInput.files || []);
+async function handleMediaUpload(input = mediaUploadInput) {
+  const uploadInput = input?.currentTarget || input || mediaUploadInput;
+  const files = Array.from(uploadInput.files || []);
   if (!files.length) return;
 
   try {
-    mediaUploadInput.disabled = true;
+    uploadInput.disabled = true;
     const uploaded = [];
     for (const [index, file] of files.entries()) {
       mediaUploadStatus.textContent = `Carico ${index + 1}/${files.length}: ${file.name}`;
@@ -444,7 +446,7 @@ async function handleMediaUpload() {
     }
     mediaAssets = [...uploaded, ...mediaAssets.filter((item) => !uploaded.some((asset) => asset.url === item.url))];
     renderMediaAssets();
-    mediaUploadInput.value = "";
+    uploadInput.value = "";
     const audioCount = uploaded.filter((asset) => asset.media_type === "audio").length;
     const videoCount = uploaded.filter((asset) => asset.media_type === "video").length;
     const imageCount = uploaded.length - videoCount - audioCount;
@@ -452,7 +454,7 @@ async function handleMediaUpload() {
   } catch (error) {
     mediaUploadStatus.textContent = error.message;
   } finally {
-    mediaUploadInput.disabled = false;
+    uploadInput.disabled = false;
   }
 }
 
@@ -820,6 +822,7 @@ sceneMotionPreset.addEventListener("change", () => {
 voicePreviewBtn?.addEventListener("click", previewSceneVoice);
 regenerateSceneBtn?.addEventListener("click", regenerateSelectedScene);
 mediaUploadInput?.addEventListener("change", handleMediaUpload);
+musicUploadInput?.addEventListener("change", handleMediaUpload);
 autoAssignMediaBtn?.addEventListener("click", autoAssignMediaToScenes);
 clearSceneImageBtn?.addEventListener("click", clearSelectedSceneImage);
 
