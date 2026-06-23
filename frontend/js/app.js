@@ -40,6 +40,7 @@ const voicePreviewStatus = document.getElementById("voicePreviewStatus");
 const musicEnabled = document.getElementById("musicEnabled");
 const musicVolume = document.getElementById("musicVolume");
 const musicMood = document.getElementById("musicMood");
+const musicTrack = document.getElementById("musicTrack");
 const exportQuality = document.getElementById("exportQuality");
 const voiceEnabled = document.getElementById("voiceEnabled");
 const voiceVolume = document.getElementById("voiceVolume");
@@ -221,6 +222,7 @@ function getAudioSettings() {
     music_enabled: Boolean(musicEnabled?.checked),
     music_volume: Number(musicVolume?.value || 0.14),
     music_mood: musicMood?.value || "cinematic_lift",
+    music_track_url: musicTrack?.value || "",
     export_quality: exportQuality?.value || "pro_1080p",
     voice_enabled: Boolean(voiceEnabled?.checked),
     voice_volume: Number(voiceVolume?.value || 0.95),
@@ -296,6 +298,7 @@ function getPreviewMotion(sceneItem) {
 function getMediaTypeFromAsset(assetOrUrl) {
   if (typeof assetOrUrl === "object" && assetOrUrl?.media_type) return assetOrUrl.media_type;
   const url = typeof assetOrUrl === "string" ? assetOrUrl : assetOrUrl?.url || "";
+  if (/\.(mp3|wav|m4a|aac|ogg)$/i.test(url)) return "audio";
   return /\.(mp4|mov|webm|m4v)$/i.test(url) ? "video" : "image";
 }
 
@@ -306,30 +309,46 @@ function getSceneMediaType(sceneItem) {
 
 function refreshSceneImageOptions() {
   const selectedValue = sceneImageInput.value;
+  const visualAssets = mediaAssets.filter((asset) => asset.media_type !== "audio");
   sceneImageInput.innerHTML = `
     <option value="">Nessun media reale</option>
-    ${mediaAssets.map((asset) => `<option value="${asset.url}">${asset.media_type === "video" ? "VIDEO" : "IMG"} - ${asset.filename}</option>`).join("")}
+    ${visualAssets.map((asset) => `<option value="${asset.url}">${asset.media_type === "video" ? "VIDEO" : "IMG"} - ${asset.filename}</option>`).join("")}
   `;
   sceneImageInput.value = selectedValue;
 }
 
+function refreshMusicTrackOptions() {
+  if (!musicTrack) return;
+  const selectedValue = musicTrack.value;
+  const audioAssets = mediaAssets.filter((asset) => asset.media_type === "audio");
+  musicTrack.innerHTML = `
+    <option value="">Usa musica generata</option>
+    ${audioAssets.map((asset) => `<option value="${asset.url}">${asset.filename}</option>`).join("")}
+  `;
+  musicTrack.value = selectedValue;
+}
+
 function renderMediaAssets() {
   refreshSceneImageOptions();
+  refreshMusicTrackOptions();
 
   if (!mediaAssets.length) {
-    mediaAssetGrid.innerHTML = "<div><span></span><b>Nessun media</b><small>Carica immagini o video</small></div>";
+    mediaAssetGrid.innerHTML = "<div><span></span><b>Nessun media</b><small>Carica immagini, video o audio</small></div>";
     return;
   }
 
   mediaAssetGrid.innerHTML = mediaAssets.map((asset) => {
     const isVideo = asset.media_type === "video";
-    const preview = isVideo
+    const isAudio = asset.media_type === "audio";
+    const preview = isAudio
+      ? `<div class="audio-asset-icon">♪</div>`
+      : isVideo
       ? `<video src="${asset.url}" muted playsinline preload="metadata"></video>`
       : `<img src="${asset.url}" alt="" loading="lazy" />`;
     return `
-    <button class="media-card ${isVideo ? "is-video" : "is-image"}" type="button" data-media-url="${asset.url}" data-media-type="${asset.media_type || "image"}">
+    <button class="media-card ${isAudio ? "is-audio" : isVideo ? "is-video" : "is-image"}" type="button" data-media-url="${asset.url}" data-media-type="${asset.media_type || "image"}">
       ${preview}
-      <span class="media-type-pill">${isVideo ? "VIDEO" : "IMG"}</span>
+      <span class="media-type-pill">${isAudio ? "AUDIO" : isVideo ? "VIDEO" : "IMG"}</span>
       <b>${asset.filename}</b>
       <small>Usa nella scena selezionata</small>
     </button>`;
@@ -337,6 +356,13 @@ function renderMediaAssets() {
 
   mediaAssetGrid.querySelectorAll("[data-media-url]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.mediaType === "audio") {
+        if (musicTrack) musicTrack.value = button.dataset.mediaUrl;
+        if (musicEnabled) musicEnabled.checked = true;
+        setStatus("Traccia musicale selezionata per il prossimo render.", "Musica");
+        return;
+      }
+
       const activeScene = currentStoryboard?.scenes?.[selectedSceneIndex];
       if (!activeScene) return;
 
@@ -357,15 +383,16 @@ function autoAssignMediaToScenes() {
     return;
   }
 
-  if (!mediaAssets.length) {
-    setStatus("Carica almeno una immagine reale.", "Media");
+  const visualAssets = mediaAssets.filter((asset) => asset.media_type !== "audio");
+  if (!visualAssets.length) {
+    setStatus("Carica almeno una immagine o un video reale.", "Media");
     return;
   }
 
   const layoutCycle = ["full", "poster", "split", "quote", "player"];
   currentStoryboard.scenes.forEach((sceneItem, index) => {
     if (!sceneItem.image_url) {
-      const asset = mediaAssets[index % mediaAssets.length];
+      const asset = visualAssets[index % visualAssets.length];
       sceneItem.image_url = asset.url;
       sceneItem.media_type = asset.media_type || getMediaTypeFromAsset(asset.url);
     }
@@ -418,9 +445,10 @@ async function handleMediaUpload() {
     mediaAssets = [...uploaded, ...mediaAssets.filter((item) => !uploaded.some((asset) => asset.url === item.url))];
     renderMediaAssets();
     mediaUploadInput.value = "";
+    const audioCount = uploaded.filter((asset) => asset.media_type === "audio").length;
     const videoCount = uploaded.filter((asset) => asset.media_type === "video").length;
-    const imageCount = uploaded.length - videoCount;
-    mediaUploadStatus.textContent = `Caricati ${uploaded.length} media: ${imageCount} immagini, ${videoCount} video.`;
+    const imageCount = uploaded.length - videoCount - audioCount;
+    mediaUploadStatus.textContent = `Caricati ${uploaded.length} media: ${imageCount} immagini, ${videoCount} video, ${audioCount} audio.`;
   } catch (error) {
     mediaUploadStatus.textContent = error.message;
   } finally {
@@ -779,9 +807,10 @@ sceneMotionPreset.addEventListener("change", () => {
   updatePreviewFromScene();
 });
 
-[musicEnabled, musicVolume, musicMood, exportQuality, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
+[musicEnabled, musicVolume, musicMood, musicTrack, exportQuality, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
   input?.addEventListener("input", () => {
-    const audioState = musicEnabled?.checked ? `Musica ${musicMood?.selectedOptions?.[0]?.textContent || "Cinematic"} attiva` : "Musica disattivata";
+    const audioName = musicTrack?.value ? `traccia caricata ${musicTrack.selectedOptions?.[0]?.textContent || ""}` : `${musicMood?.selectedOptions?.[0]?.textContent || "Cinematic"}`;
+    const audioState = musicEnabled?.checked ? `Musica ${audioName} attiva` : "Musica disattivata";
     const qualityState = (exportQuality?.value || "pro_1080p") === "draft" ? "Anteprima 720p" : "Export Pro 1080p";
     const voiceState = voiceEnabled?.checked ? `Voice-over ${voiceStyle?.value || "studio"} attivo nell'MP4` : "Voice-over disattivato";
     setStatus(`${audioState}. ${voiceState}. ${qualityState}.`, "Audio");

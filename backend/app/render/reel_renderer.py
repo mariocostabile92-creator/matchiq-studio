@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
-from moviepy import AudioFileClip, CompositeAudioClip, VideoClip, VideoFileClip, concatenate_videoclips
+from moviepy import AudioFileClip, CompositeAudioClip, VideoClip, VideoFileClip, concatenate_audioclips, concatenate_videoclips
 
 from backend.app.core.config import RENDERS_DIR, UPLOADS_DIR
 from backend.app.core.config import FRONTEND_DIR
@@ -517,7 +517,7 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
 
     return VideoClip(frame_function=make_frame, duration=duration)
 
-def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = True, music_volume: float = 0.12, music_mood: str = "cinematic", voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
+def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = True, music_volume: float = 0.12, music_mood: str = "cinematic", music_track_url: str = "", voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
     is_draft = quality == "draft"
     width, height = (DRAFT_WIDTH, DRAFT_HEIGHT) if is_draft else (FINAL_WIDTH, FINAL_HEIGHT)
     fps = 20 if is_draft else 30
@@ -549,7 +549,14 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     if music_enabled:
         if on_progress:
             on_progress(88, "Sto aggiungendo musica e mix audio...")
-        music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(max(music_volume, 0.08), 0.24), mood=music_mood)
+        custom_music_path = _uploaded_media_path(music_track_url)
+        if custom_music_path:
+            base_music = AudioFileClip(str(custom_music_path)).with_volume_scaled(min(max(music_volume, 0.02), 0.32))
+            loops = max(1, int(total_duration // max(.1, base_music.duration)) + 1)
+            music_audio = concatenate_audioclips([base_music] * loops).subclipped(0, total_duration)
+            audio_clips_to_close.append(base_music)
+        else:
+            music_audio = build_music_bed(tone=tone, duration=total_duration, volume=min(max(music_volume, 0.08), 0.24), mood=music_mood)
         audio_tracks.append(music_audio)
         audio_clips_to_close.append(music_audio)
     if voice_enabled:

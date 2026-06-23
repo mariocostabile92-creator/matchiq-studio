@@ -98,6 +98,7 @@ async function renderStoryboard(payload) {
         duration_seconds: Math.max(8, Math.round(scenes.reduce((sum, scene) => sum + (scene.duration_seconds || 3), 0))),
         call_to_action: lastScene?.subtitle || "Scopri il progetto",
         music_enabled: payload.music_enabled ?? false,
+        music_track_url: payload.music_track_url ?? "",
         export_quality: payload.export_quality ?? "draft",
         music_volume: payload.music_volume ?? 0.08,
         voice_enabled: payload.voice_enabled ?? true,
