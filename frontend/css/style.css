@@ -1119,7 +1119,7 @@ video {
 }
 
 .assistant-list button::before{
-  content:"✦";
+  content:"E";
   color:var(--accent);
   margin-right:8px;
 }

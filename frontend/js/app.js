@@ -342,7 +342,7 @@ function renderMediaAssets() {
     const isVideo = asset.media_type === "video";
     const isAudio = asset.media_type === "audio";
     const preview = isAudio
-      ? `<div class="audio-asset-icon">♪</div>`
+      ? `<div class="audio-asset-icon">M</div>`
       : isVideo
       ? `<video src="${asset.url}" muted playsinline preload="metadata"></video>`
       : `<img src="${asset.url}" alt="" loading="lazy" />`;
