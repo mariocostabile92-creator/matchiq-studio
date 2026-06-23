@@ -111,7 +111,7 @@ def register(payload: RegisterRequest, response: Response):
     users = _read_json(USERS_PATH, {})
     email = _normalize_email(payload.email)
     if email in users:
-        raise HTTPException(status_code=409, detail="Esiste gia un account con questa email.")
+        return {"success": False, "message": "Esiste gia un account con questa email. Usa Login."}
     user = {
         "id": secrets.token_hex(12),
         "name": payload.name.strip(),
@@ -131,7 +131,7 @@ def login(payload: LoginRequest, response: Response):
     email = _normalize_email(payload.email)
     user = users.get(email)
     if not user or not _verify_password(payload.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Email o password non corretti.")
+        return {"success": False, "message": "Email o password non corretti. Se e il primo accesso usa Registrazione."}
     _create_session(response, user["id"])
     return {"success": True, "user": _public_user(user)}
 
@@ -140,7 +140,7 @@ def login(payload: LoginRequest, response: Response):
 def me(request: Request):
     user = _current_user_from_request(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Non autenticato.")
+        return {"success": False, "user": None}
     return {"success": True, "user": _public_user(user)}
 
 

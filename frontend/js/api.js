@@ -84,21 +84,21 @@ async function regenerateScene(payload) {
 async function loginUser(payload) {
   const response = await fetch("/api/auth/login", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || "Login non riuscito.");
+  if (!response.ok || data.success === false) throw new Error(data.detail || data.message || "Login non riuscito.");
   return data;
 }
 
 async function registerUser(payload) {
   const response = await fetch("/api/auth/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || "Registrazione non riuscita.");
+  if (!response.ok || data.success === false) throw new Error(data.detail || data.message || "Registrazione non riuscita.");
   return data;
 }
 
 async function getCurrentUser() {
   const response = await fetch("/api/auth/me");
   const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || "Non autenticato.");
+  if (!response.ok || data.success === false) throw new Error(data.detail || "Non autenticato.");
   return data;
 }
 

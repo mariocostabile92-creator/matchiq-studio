@@ -118,7 +118,7 @@ async function bootAuth() {
     const data = await getCurrentUser();
     showApp(data.user);
   } catch {
-    showAuth();
+    showAuth("Accedi oppure registrati per creare il tuo workspace.");
   }
 }
 
@@ -141,6 +141,7 @@ authForm?.addEventListener("submit", async (event) => {
     showApp(data.user);
   } catch (error) {
     authStatus.textContent = error.message;
+    if (authMode === "login" && /primo accesso|registrazione/i.test(error.message)) setAuthMode("register");
   } finally {
     authSubmitBtn.disabled = false;
   }
