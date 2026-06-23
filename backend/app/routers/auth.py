@@ -182,14 +182,16 @@ def _create_session(response: Response, user_id: str) -> str:
             "DELETE FROM sessions WHERE expires_at < ?",
             (datetime.now(timezone.utc).isoformat(),),
         )
+    is_secure_cookie = False
     response.set_cookie(
         "matchiq_session",
         token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=is_secure_cookie,
         max_age=max_age,
         expires=expires,
+        path="/",
     )
     return token
 

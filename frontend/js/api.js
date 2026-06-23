@@ -1,23 +1,56 @@
 const MATCHIQ_SESSION_KEY = "matchiq_session_token";
 const MATCHIQ_USER_KEY = "matchiq_user";
+const MATCHIQ_AUTH_FLAG = "matchiq_auth_remembered";
+const MATCHIQ_AUTH_TIME = "matchiq_auth_saved_at";
+
+function storageSafe() {
+  try {
+    const testKey = "__matchiq_storage_test__";
+    localStorage.setItem(testKey, "1");
+    localStorage.removeItem(testKey);
+    return localStorage;
+  } catch {
+    return sessionStorage;
+  }
+}
 
 function getStoredSessionToken() {
-  return localStorage.getItem(MATCHIQ_SESSION_KEY) || "";
+  try { return storageSafe().getItem(MATCHIQ_SESSION_KEY) || ""; }
+  catch { return ""; }
 }
 
 function setStoredSession(data) {
-  if (data?.session_token) localStorage.setItem(MATCHIQ_SESSION_KEY, data.session_token);
-  if (data?.user) localStorage.setItem(MATCHIQ_USER_KEY, JSON.stringify(data.user));
+  try {
+    const store = storageSafe();
+    if (data?.session_token) store.setItem(MATCHIQ_SESSION_KEY, data.session_token);
+    if (data?.user) {
+      store.setItem(MATCHIQ_USER_KEY, JSON.stringify(data.user));
+      store.setItem(MATCHIQ_AUTH_FLAG, "yes");
+      store.setItem(MATCHIQ_AUTH_TIME, String(Date.now()));
+    }
+  } catch {
+    // If browser storage is unavailable, cookie auth still works.
+  }
 }
 
 function clearStoredSession() {
-  localStorage.removeItem(MATCHIQ_SESSION_KEY);
-  localStorage.removeItem(MATCHIQ_USER_KEY);
+  try {
+    const store = storageSafe();
+    store.removeItem(MATCHIQ_SESSION_KEY);
+    store.removeItem(MATCHIQ_USER_KEY);
+    store.removeItem(MATCHIQ_AUTH_FLAG);
+    store.removeItem(MATCHIQ_AUTH_TIME);
+  } catch {}
 }
 
 function getStoredUser() {
-  try { return JSON.parse(localStorage.getItem(MATCHIQ_USER_KEY) || "null"); }
+  try { return JSON.parse(storageSafe().getItem(MATCHIQ_USER_KEY) || "null"); }
   catch { return null; }
+}
+
+function hasRememberedWorkspace() {
+  try { return storageSafe().getItem(MATCHIQ_AUTH_FLAG) === "yes" && !!getStoredUser(); }
+  catch { return false; }
 }
 
 function authHeaders(extra = {}) {

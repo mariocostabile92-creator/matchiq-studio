@@ -11,3 +11,10 @@ Current MVP behavior:
 - login/register create a 180-day session;
 - if the same user registers again with the same email and correct password, the app logs them in instead of asking them to create another account;
 - old JSON users/sessions are migrated automatically into SQLite on boot.
+
+## V5.6 browser remember layer
+
+The frontend also stores the authenticated workspace in browser storage.
+This prevents the user from being forced back to registration if the backend session is lost after a deploy or if Railway storage is reset.
+
+Production note: this improves the MVP experience on the same browser/device, but real multi-device user persistence still requires a Railway Volume or managed database.

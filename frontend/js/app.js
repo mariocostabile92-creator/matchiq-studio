@@ -115,12 +115,23 @@ function showAuth(message = "Accedi o crea un account per continuare.") {
 
 async function bootAuth() {
   const cachedUser = typeof getStoredUser === "function" ? getStoredUser() : null;
-  if (cachedUser) showApp(cachedUser);
+  const remembered = typeof hasRememberedWorkspace === "function" ? hasRememberedWorkspace() : !!cachedUser;
+
+  if (cachedUser || remembered) {
+    showApp(cachedUser || {name: "Creator", email: ""});
+    if (authStatus) authStatus.textContent = "Workspace recuperato.";
+  }
+
   try {
     const data = await getCurrentUser();
-    if (data?.user) showApp(data.user);
+    if (data?.user) {
+      if (typeof setStoredSession === "function") setStoredSession(data);
+      showApp(data.user);
+    }
   } catch {
-    if (!cachedUser) showAuth("Accedi oppure registrati per creare il tuo workspace.");
+    if (!cachedUser && !remembered) {
+      showAuth("Accedi oppure registrati per creare il tuo workspace.");
+    }
   }
 }
 
@@ -144,7 +155,10 @@ authForm?.addEventListener("submit", async (event) => {
     showApp(data.user);
   } catch (error) {
     authStatus.textContent = error.message;
-    if (authMode === "login" && /primo accesso|registrazione/i.test(error.message)) setAuthMode("register");
+    if (authMode === "login" && /primo accesso|registrazione/i.test(error.message)) {
+      setAuthMode("register");
+      authStatus.textContent = "Se e' il primo accesso, crea l'account una sola volta. Poi MatchIQ Studio lo ricordera'.";
+    }
   } finally {
     authSubmitBtn.disabled = false;
   }
