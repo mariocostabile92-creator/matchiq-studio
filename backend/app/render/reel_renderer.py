@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
-from moviepy import AudioFileClip, CompositeAudioClip, VideoClip, concatenate_videoclips
+from moviepy import AudioFileClip, CompositeAudioClip, VideoClip, VideoFileClip, concatenate_videoclips
 
 from backend.app.core.config import RENDERS_DIR, UPLOADS_DIR
 from backend.app.core.config import FRONTEND_DIR
@@ -26,6 +26,7 @@ TONE_BACKGROUNDS = {
 
 BRAND_ICON_PATH = FRONTEND_DIR / "assets" / "brand" / "matchiq-app-icon.png"
 BRAND_FULL_LOGO_PATH = FRONTEND_DIR / "assets" / "brand" / "matchiq-studio-primary.png"
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v"}
 _BRAND_ICON_CACHE = {}
 _BRAND_FULL_CACHE = {}
 
@@ -101,17 +102,19 @@ def _paste_shadowed(canvas: Image.Image, foreground: Image.Image, x: int, y: int
         canvas.alpha_composite(foreground.convert("RGBA"), (x, y))
 
 
-def _load_scene_image(image_url: str | None, width: int, height: int, layout: str = "auto") -> Image.Image | None:
-    if not image_url or not image_url.startswith("/uploads/"):
+def _uploaded_media_path(media_url: str | None) -> Path | None:
+    if not media_url or not media_url.startswith("/uploads/"):
         return None
-    image_path = UPLOADS_DIR / Path(image_url).name
-    if not image_path.exists():
-        return None
-    try:
-        original = Image.open(image_path).convert("RGB")
-    except OSError:
-        return None
+    path = UPLOADS_DIR / Path(media_url).name
+    return path if path.exists() else None
 
+
+def _is_video_media(media_url: str | None) -> bool:
+    path = _uploaded_media_path(media_url)
+    return bool(path and path.suffix.lower() in VIDEO_EXTENSIONS)
+
+
+def _compose_uploaded_visual(original: Image.Image, width: int, height: int, layout: str = "auto") -> Image.Image:
     layout = (layout or "auto").lower().strip()
     if layout == "auto":
         ratio = original.width / max(1, original.height)
@@ -175,6 +178,17 @@ def _load_scene_image(image_url: str | None, width: int, height: int, layout: st
     lower = Image.new("RGBA", (width, int(height * .34)), (0, 0, 0, 104))
     canvas.alpha_composite(lower, (0, int(height * .66)))
     return canvas.convert("RGB")
+
+
+def _load_scene_image(image_url: str | None, width: int, height: int, layout: str = "auto") -> Image.Image | None:
+    image_path = _uploaded_media_path(image_url)
+    if not image_path or image_path.suffix.lower() in VIDEO_EXTENSIONS:
+        return None
+    try:
+        original = Image.open(image_path).convert("RGB")
+    except OSError:
+        return None
+    return _compose_uploaded_visual(original, width, height, layout)
 
 def _background_gradient(width: int, height: int, top, bottom):
     img = Image.new("RGB", (width, height), top)
@@ -435,6 +449,38 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
 
     return Image.alpha_composite(frame.convert("RGBA"), overlay).convert("RGB")
 
+def _draw_text_brand_grade(img: Image.Image, scene, scene_index: int, accent, width: int, height: int) -> Image.Image:
+    draw = ImageDraw.Draw(img)
+    _draw_reel_text(draw, scene, scene_index, accent, width, height)
+    icon = _get_brand_asset(width, full=False)
+    if icon:
+        img.alpha_composite(icon, (int(width * .83), int(height * .89)))
+    return _apply_cinematic_grade(img.convert("RGB"), scene, width, height)
+
+
+def _animate_uploaded_video_clip(scene, width: int, height: int, pacing: str, visual_style: str, accent, scene_index: int):
+    path = _uploaded_media_path(scene.image_url)
+    source = VideoFileClip(str(path))
+    duration = scene.duration_seconds
+    source_duration = max(.2, float(source.duration or duration))
+    speed_factor = _motion_speed_factor(scene)
+
+    def make_frame(t):
+        progress = _ease(min(1.0, (t / max(duration, .01)) * _pacing_factor(pacing) * speed_factor))
+        frame_time = min(source_duration - .05, (t * (1.0 + progress * .08)) % source_duration)
+        frame = Image.fromarray(source.get_frame(frame_time)).convert("RGB")
+        layout = _scene_attr(scene, "visual_layout", "full")
+        img = _compose_uploaded_visual(frame, width, height, "full" if layout == "auto" else layout).convert("RGBA")
+        img = _apply_photo_overlay(img, accent, width, height).convert("RGBA")
+        img = _draw_text_brand_grade(img, scene, scene_index, accent, width, height)
+        img = _draw_dynamic_overlays(img, scene, t, duration, visual_style, accent, width, height)
+        return np.array(img)
+
+    clip = VideoClip(frame_function=make_frame, duration=duration)
+    clip._matchiq_source_clip = source
+    return clip
+
+
 def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing: str, visual_style: str, accent):
     duration = scene.duration_seconds
     motion = _motion_kind(scene)
@@ -484,8 +530,12 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
             progress = 18 + int((index - 1) / len(storyboard.scenes) * 58)
             on_progress(progress, f"Sto preparando scena {index}: transizioni, testo vivo e sottotitoli animati...")
         scene_path = work_dir / f"scene_{index}.png"
-        _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
-        clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing, visual_style, TONE_BACKGROUNDS.get(tone, TONE_BACKGROUNDS["cinematic"])[2]))
+        accent = TONE_BACKGROUNDS.get(tone, TONE_BACKGROUNDS["cinematic"])[2]
+        if _is_video_media(scene.image_url):
+            clips.append(_animate_uploaded_video_clip(scene, width, height, pacing, visual_style, accent, index))
+        else:
+            _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
+            clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing, visual_style, accent))
     if on_progress:
         on_progress(82, "Sto esportando il file MP4 in modalita' draft...")
     final = concatenate_videoclips(clips, method="compose")
@@ -527,5 +577,8 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     for audio_clip in audio_clips_to_close:
         audio_clip.close()
     for clip in clips:
+        source_clip = getattr(clip, "_matchiq_source_clip", None)
         clip.close()
+        if source_clip:
+            source_clip.close()
     return filename, output_path

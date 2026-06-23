@@ -291,11 +291,22 @@ function getPreviewMotion(sceneItem) {
   return "push";
 }
 
+function getMediaTypeFromAsset(assetOrUrl) {
+  if (typeof assetOrUrl === "object" && assetOrUrl?.media_type) return assetOrUrl.media_type;
+  const url = typeof assetOrUrl === "string" ? assetOrUrl : assetOrUrl?.url || "";
+  return /\.(mp4|mov|webm|m4v)$/i.test(url) ? "video" : "image";
+}
+
+function getSceneMediaType(sceneItem) {
+  if (!sceneItem?.image_url) return "";
+  return sceneItem.media_type || getMediaTypeFromAsset(sceneItem.image_url);
+}
+
 function refreshSceneImageOptions() {
   const selectedValue = sceneImageInput.value;
   sceneImageInput.innerHTML = `
-    <option value="">Nessuna immagine reale</option>
-    ${mediaAssets.map((asset) => `<option value="${asset.url}">${asset.filename}</option>`).join("")}
+    <option value="">Nessun media reale</option>
+    ${mediaAssets.map((asset) => `<option value="${asset.url}">${asset.media_type === "video" ? "VIDEO" : "IMG"} - ${asset.filename}</option>`).join("")}
   `;
   sceneImageInput.value = selectedValue;
 }
@@ -304,17 +315,23 @@ function renderMediaAssets() {
   refreshSceneImageOptions();
 
   if (!mediaAssets.length) {
-    mediaAssetGrid.innerHTML = "<div><span></span><b>Nessuna immagine</b><small>Carica il primo asset</small></div>";
+    mediaAssetGrid.innerHTML = "<div><span></span><b>Nessun media</b><small>Carica immagini o video</small></div>";
     return;
   }
 
-  mediaAssetGrid.innerHTML = mediaAssets.map((asset) => `
-    <button class="media-card" type="button" data-media-url="${asset.url}">
-      <img src="${asset.url}" alt="" />
+  mediaAssetGrid.innerHTML = mediaAssets.map((asset) => {
+    const isVideo = asset.media_type === "video";
+    const preview = isVideo
+      ? `<video src="${asset.url}" muted playsinline preload="metadata"></video>`
+      : `<img src="${asset.url}" alt="" loading="lazy" />`;
+    return `
+    <button class="media-card ${isVideo ? "is-video" : "is-image"}" type="button" data-media-url="${asset.url}" data-media-type="${asset.media_type || "image"}">
+      ${preview}
+      <span class="media-type-pill">${isVideo ? "VIDEO" : "IMG"}</span>
       <b>${asset.filename}</b>
       <small>Usa nella scena selezionata</small>
-    </button>
-  `).join("");
+    </button>`;
+  }).join("");
 
   mediaAssetGrid.querySelectorAll("[data-media-url]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -322,6 +339,7 @@ function renderMediaAssets() {
       if (!activeScene) return;
 
       activeScene.image_url = button.dataset.mediaUrl;
+      activeScene.media_type = button.dataset.mediaType || getMediaTypeFromAsset(activeScene.image_url);
       activeScene.visual_layout = activeScene.visual_layout || "auto";
       sceneImageInput.value = activeScene.image_url;
       if (sceneLayoutInput) sceneLayoutInput.value = activeScene.visual_layout;
@@ -345,7 +363,12 @@ function autoAssignMediaToScenes() {
   const layoutCycle = ["full", "poster", "split", "quote", "player"];
   currentStoryboard.scenes.forEach((sceneItem, index) => {
     if (!sceneItem.image_url) {
-      sceneItem.image_url = mediaAssets[index % mediaAssets.length].url;
+      const asset = mediaAssets[index % mediaAssets.length];
+      sceneItem.image_url = asset.url;
+      sceneItem.media_type = asset.media_type || getMediaTypeFromAsset(asset.url);
+    }
+    if (!sceneItem.media_type && sceneItem.image_url) {
+      sceneItem.media_type = getMediaTypeFromAsset(sceneItem.image_url);
     }
     if (!sceneItem.visual_layout || sceneItem.visual_layout === "auto") {
       sceneItem.visual_layout = layoutCycle[index % layoutCycle.length];
@@ -379,18 +402,27 @@ async function loadMediaAssets() {
 }
 
 async function handleMediaUpload() {
-  const file = mediaUploadInput.files?.[0];
-  if (!file) return;
+  const files = Array.from(mediaUploadInput.files || []);
+  if (!files.length) return;
 
   try {
-    mediaUploadStatus.textContent = "Sto caricando l'immagine...";
-    const asset = await uploadMediaAsset(file);
-    mediaAssets = [asset, ...mediaAssets.filter((item) => item.url !== asset.url)];
+    mediaUploadInput.disabled = true;
+    const uploaded = [];
+    for (const [index, file] of files.entries()) {
+      mediaUploadStatus.textContent = `Carico ${index + 1}/${files.length}: ${file.name}`;
+      const asset = await uploadMediaAsset(file);
+      uploaded.push(asset);
+    }
+    mediaAssets = [...uploaded, ...mediaAssets.filter((item) => !uploaded.some((asset) => asset.url === item.url))];
     renderMediaAssets();
     mediaUploadInput.value = "";
-    mediaUploadStatus.textContent = "Immagine caricata. Puoi assegnarla alla scena.";
+    const videoCount = uploaded.filter((asset) => asset.media_type === "video").length;
+    const imageCount = uploaded.length - videoCount;
+    mediaUploadStatus.textContent = `Caricati ${uploaded.length} media: ${imageCount} immagini, ${videoCount} video.`;
   } catch (error) {
     mediaUploadStatus.textContent = error.message;
+  } finally {
+    mediaUploadInput.disabled = false;
   }
 }
 
@@ -399,7 +431,8 @@ function updateTimeline(storyboard = currentStoryboard) {
   const data = storyboard || buildDraftStoryboard(payload);
   timelineList.innerHTML = data.scenes.map((sceneItem, index) => {
     const duration = Math.max(2, Math.round(sceneItem.duration_seconds || 3));
-    const mediaLabel = sceneItem.image_url ? "IMG" : "NO IMG";
+    const sceneMediaType = getSceneMediaType(sceneItem);
+    const mediaLabel = sceneMediaType === "video" ? "VIDEO" : sceneMediaType === "image" ? "IMG" : "NO MEDIA";
     const description = `${sceneItem.title || "Scena"} - ${sceneItem.subtitle || ""}`.trim();
     return `
     <li class="${index === selectedSceneIndex ? "selected" : ""}" data-scene-index="${index}" title="${description}">
@@ -439,7 +472,7 @@ function handleSceneQuickAction(action, index) {
   }
   if (action === "image") {
     scrollToStudioSection("media");
-    setStatus("Scegli una immagine e verra assegnata alla scena selezionata.", "Media");
+    setStatus("Scegli una immagine o un video e verra assegnato alla scena selezionata.", "Media");
     return;
   }
   if (action === "text") {
@@ -466,8 +499,10 @@ function updatePreviewFromScene() {
   phoneScreen.dataset.tone = payload.tone;
   phoneScreen.dataset.motion = getPreviewMotion(activeScene);
   phoneScreen.dataset.visualStyle = payload.visual_style;
+  const activeMediaType = getSceneMediaType(activeScene);
   phoneScreen.dataset.hasImage = activeScene?.image_url ? "true" : "false";
-  phoneScreen.style.backgroundImage = activeScene?.image_url
+  phoneScreen.dataset.mediaType = activeMediaType || "none";
+  phoneScreen.style.backgroundImage = activeScene?.image_url && activeMediaType !== "video"
     ? `linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.24) 48%, rgba(0,0,0,.74) 100%), url("${activeScene.image_url}")`
     : "";
   hookScore.textContent = scoreHook(payload.title);
@@ -525,6 +560,8 @@ function updateSceneFromEditor() {
   activeScene.subtitle = sceneSubtitleInput.value.trim() || activeScene.subtitle;
   activeScene.visual = sceneVisualInput.value.trim() || activeScene.visual;
   activeScene.image_url = sceneImageInput.value;
+  const selectedAsset = mediaAssets.find((asset) => asset.url === activeScene.image_url);
+  activeScene.media_type = selectedAsset?.media_type || getMediaTypeFromAsset(activeScene.image_url);
   activeScene.visual_layout = sceneLayoutInput?.value || "auto";
   const motionParts = sceneMotionInput.value.split(" - ").map((part) => part.trim()).filter(Boolean);
   activeScene.camera = motionParts[0] || activeScene.camera;

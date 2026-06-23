@@ -129,7 +129,7 @@ async function uploadMediaAsset(file) {
   formData.append("file", file);
   const response = await fetch("/api/media/upload", {method:"POST",body:formData});
   const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || "Errore durante l'upload dell'immagine.");
+  if (!response.ok) throw new Error(data.detail || "Errore durante l'upload del media.");
   return data;
 }
 
