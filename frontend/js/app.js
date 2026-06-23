@@ -375,19 +375,23 @@ async function handleMediaUpload() {
 function updateTimeline(storyboard = currentStoryboard) {
   const payload = buildPayload();
   const data = storyboard || buildDraftStoryboard(payload);
-  timelineList.innerHTML = data.scenes.map((sceneItem, index) => `
-    <li class="${index === selectedSceneIndex ? "selected" : ""}" data-scene-index="${index}">
+  timelineList.innerHTML = data.scenes.map((sceneItem, index) => {
+    const duration = Math.max(2, Math.round(sceneItem.duration_seconds || 3));
+    const mediaLabel = sceneItem.image_url ? "IMG" : "NO IMG";
+    const description = `${sceneItem.title || "Scena"} - ${sceneItem.subtitle || ""}`.trim();
+    return `
+    <li class="${index === selectedSceneIndex ? "selected" : ""}" data-scene-index="${index}" title="${description}">
       <span>${String(index + 1).padStart(2, "0")}</span>
       <p><b>${sceneItem.title}</b> - ${sceneItem.subtitle}</p>
-      <small>${sceneItem.image_url ? "IMG" : ""} ${Math.max(2, Math.round(sceneItem.duration_seconds || 3))}s</small>
+      <small><em>${mediaLabel}</em><strong>${duration}s</strong></small>
       <div class="scene-card-actions">
         <button type="button" data-scene-action="regen" data-scene-index="${index}">Rigenera</button>
-        <button type="button" data-scene-action="image" data-scene-index="${index}">Immagine</button>
+        <button type="button" data-scene-action="image" data-scene-index="${index}">Img</button>
         <button type="button" data-scene-action="text" data-scene-index="${index}">Testo</button>
         <button type="button" data-scene-action="preview" data-scene-index="${index}">Preview</button>
       </div>
-    </li>
-  `).join("");
+    </li>`;
+  }).join("");
 
   timelineList.querySelectorAll("li").forEach((item) => {
     item.addEventListener("click", (event) => {

@@ -128,10 +128,10 @@ def _apply_photo_overlay(img: Image.Image, accent, width: int, height: int) -> I
     draw = ImageDraw.Draw(overlay)
     for y in range(height):
         ratio = y / height
-        alpha = int(8 + 72 * ratio)
+        alpha = int(4 + 46 * ratio)
         draw.line((0, y, width, y), fill=(0, 0, 0, alpha))
-    draw.rectangle((0, 0, width, int(height * .20)), fill=(0, 0, 0, 42))
-    draw.rectangle((0, int(height * .68), width, height), fill=(0, 0, 0, 62))
+    draw.rectangle((0, 0, width, int(height * .12)), fill=(0, 0, 0, 20))
+    draw.rectangle((0, int(height * .74), width, height), fill=(0, 0, 0, 78))
     return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 
 
@@ -307,15 +307,16 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
     pulse = .5 + .5 * np.sin(progress * np.pi * 4)
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
+    has_media = bool(_scene_attr(scene, "image_url", ""))
 
-    if preset in {"social", "captions", "neon"}:
+    if not has_media and preset in {"social", "captions", "neon"}:
         glow_x = int(width * (.18 + .64 * progress))
         draw.ellipse((glow_x - int(width * .34), int(height * .12), glow_x + int(width * .34), int(height * .72)), fill=(*accent, int(10 + 20 * pulse)))
 
-    if preset == "sport":
+    if not has_media and preset == "sport":
         draw.ellipse((int(width * .08), int(height * .18), int(width * .92), int(height * .82)), outline=(*accent, 42), width=4)
 
-    if preset == "data":
+    if not has_media and preset == "data":
         for index in range(4):
             x = int(width * (.12 + index * .19))
             y = int(height * (.24 + .04 * np.sin(progress * np.pi * 2 + index)))
@@ -328,8 +329,8 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
         live_caption = " ".join(words[:shown])
         if len(live_caption.split()) > 8:
             live_caption = " ".join(live_caption.split()[-8:])
-        font = _get_font(max(34, width // 18))
-        lines = _wrap_text(live_caption.upper(), font, int(width * .82), width, height)[-2:]
+        font = _get_font(max(30, width // 20) if has_media else max(34, width // 18))
+        lines = _wrap_text(live_caption.upper(), font, int(width * (.86 if has_media else .82)), width, height)[-2:]
         gradient = Image.new("RGBA", (width, int(height * .28)), (0, 0, 0, 0))
         gdraw = ImageDraw.Draw(gradient)
         for yy in range(gradient.height):
@@ -346,8 +347,8 @@ def _draw_dynamic_overlays(frame: Image.Image, scene, t: float, duration: float,
                 draw.text((tx_x + dx, tx_y + dy), line, font=font, fill=(0, 0, 0, 210))
             draw.text((tx_x, tx_y), line, font=font, fill=(248, 251, 255, 245))
             tx_y += line_h
-        progress_w = int(width * .42 * min(1, progress * 1.08))
-        bar_x = (width - int(width * .42)) // 2
+        progress_w = int(width * (.34 if has_media else .42) * min(1, progress * 1.08))
+        bar_x = (width - int(width * (.34 if has_media else .42))) // 2
         bar_y = int(height * .89)
         draw.rounded_rectangle((bar_x, bar_y, bar_x + progress_w, bar_y + 5), radius=3, fill=(*accent, 210))
 
