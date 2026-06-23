@@ -1,20 +1,37 @@
 # MatchIQ Studio Auth Persistence
 
-MatchIQ Studio V5.4 stores users and sessions in `storage/auth/matchiq_auth.sqlite3`.
+MatchIQ Studio V5.7 supports production-grade auth persistence.
 
-Important for Railway:
-- users stay saved while the server keeps the same persistent storage;
-- if Railway redeploys on an ephemeral filesystem without a Volume, the auth database can be recreated empty;
-- for production, mount a Railway Volume on the project `storage` folder or move auth to a managed database.
+## Local development
 
-Current MVP behavior:
+When `DATABASE_URL` is not set, users and sessions are stored in:
+
+`storage/auth/matchiq_auth.sqlite3`
+
+## Railway production
+
+For definitive persistence across deploys, restarts and devices:
+
+1. Add a Railway PostgreSQL database to the project.
+2. Make sure the web service receives `DATABASE_URL`.
+3. Deploy this version.
+4. Check `/api/auth/health`.
+
+Expected production response:
+
+```json
+{
+  "success": true,
+  "database": "postgres",
+  "persistent": true
+}
+```
+
+If the response says `sqlite`, the app is still using local storage and Railway can lose users after redeploys.
+
+## Current behavior
+
 - login/register create a 180-day session;
-- if the same user registers again with the same email and correct password, the app logs them in instead of asking them to create another account;
-- old JSON users/sessions are migrated automatically into SQLite on boot.
-
-## V5.6 browser remember layer
-
-The frontend also stores the authenticated workspace in browser storage.
-This prevents the user from being forced back to registration if the backend session is lost after a deploy or if Railway storage is reset.
-
-Production note: this improves the MVP experience on the same browser/device, but real multi-device user persistence still requires a Railway Volume or managed database.
+- users are stored in PostgreSQL when `DATABASE_URL` exists;
+- local SQLite remains available for development;
+- old JSON users/sessions are migrated automatically into the active database on boot.

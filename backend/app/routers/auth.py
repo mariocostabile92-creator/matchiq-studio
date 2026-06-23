@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import os
 import secrets
 import sqlite3
 from datetime import datetime, timezone, timedelta
@@ -16,7 +17,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 AUTH_DIR = STORAGE_DIR / "auth"
 USERS_PATH = AUTH_DIR / "users.json"
 SESSIONS_PATH = AUTH_DIR / "sessions.json"
-DB_PATH = AUTH_DIR / "matchiq_auth.sqlite3"
+SQLITE_PATH = AUTH_DIR / "matchiq_auth.sqlite3"
+DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
+USE_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
 AUTH_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -36,11 +39,23 @@ def _now() -> str:
 
 
 def _connect():
-    conn = sqlite3.connect(DB_PATH, timeout=20)
+    if USE_POSTGRES:
+        try:
+            import psycopg
+            from psycopg.rows import dict_row
+        except ImportError as exc:
+            raise RuntimeError("DATABASE_URL richiede psycopg. Aggiungi psycopg[binary] a requirements.txt.") from exc
+        return psycopg.connect(DATABASE_URL, row_factory=dict_row)
+
+    conn = sqlite3.connect(SQLITE_PATH, timeout=20)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+def _param() -> str:
+    return "%s" if USE_POSTGRES else "?"
 
 
 def _read_json(path: Path, fallback):
@@ -50,6 +65,47 @@ def _read_json(path: Path, fallback):
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return fallback
+
+
+def _execute(conn, sql: str, params=()):
+    return conn.execute(sql, params)
+
+
+def _insert_user_ignore(conn, user: dict) -> None:
+    if USE_POSTGRES:
+        conn.execute(
+            """
+            INSERT INTO users (id, email, name, password_hash, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (email) DO NOTHING
+            """,
+            (user["id"], user["email"], user["name"], user["password_hash"], user["created_at"], user["updated_at"]),
+        )
+    else:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO users (id, email, name, password_hash, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (user["id"], user["email"], user["name"], user["password_hash"], user["created_at"], user["updated_at"]),
+        )
+
+
+def _insert_session_ignore(conn, token: str, user_id: str, created_at: str, expires_at: str) -> None:
+    if USE_POSTGRES:
+        conn.execute(
+            """
+            INSERT INTO sessions (token, user_id, created_at, expires_at)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (token) DO NOTHING
+            """,
+            (token, user_id, created_at, expires_at),
+        )
+    else:
+        conn.execute(
+            "INSERT OR IGNORE INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
+            (token, user_id, created_at, expires_at),
+        )
 
 
 def _init_db() -> None:
@@ -80,20 +136,14 @@ def _init_db() -> None:
             if not isinstance(user, dict):
                 continue
             normalized = _normalize_email(user.get("email") or email)
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO users (id, email, name, password_hash, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    user.get("id") or secrets.token_hex(12),
-                    normalized,
-                    user.get("name") or "Creator",
-                    user.get("password_hash") or "",
-                    user.get("created_at") or _now(),
-                    _now(),
-                ),
-            )
+            _insert_user_ignore(conn, {
+                "id": user.get("id") or secrets.token_hex(12),
+                "email": normalized,
+                "name": user.get("name") or "Creator",
+                "password_hash": user.get("password_hash") or "",
+                "created_at": user.get("created_at") or _now(),
+                "updated_at": _now(),
+            })
 
         legacy_sessions = _read_json(SESSIONS_PATH, {})
         expires_at = (datetime.now(timezone.utc) + timedelta(days=180)).isoformat()
@@ -102,10 +152,7 @@ def _init_db() -> None:
                 continue
             user_id = session.get("user_id")
             if user_id:
-                conn.execute(
-                    "INSERT OR IGNORE INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
-                    (token, user_id, session.get("created_at") or _now(), expires_at),
-                )
+                _insert_session_ignore(conn, token, user_id, session.get("created_at") or _now(), expires_at)
 
 
 def _hash_password(password: str, salt: str | None = None) -> str:
@@ -130,7 +177,7 @@ def _normalize_email(email: str) -> str:
     return email
 
 
-def _public_user(user: dict | sqlite3.Row) -> dict:
+def _public_user(user) -> dict:
     return {
         "id": user["id"],
         "name": user["name"],
@@ -139,14 +186,13 @@ def _public_user(user: dict | sqlite3.Row) -> dict:
     }
 
 
+def _fetchone(sql: str, params=()):
+    with _connect() as conn:
+        return conn.execute(sql, params).fetchone()
+
+
 def _get_user_by_email(email: str):
-    with _connect() as conn:
-        return conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-
-
-def _get_user_by_id(user_id: str):
-    with _connect() as conn:
-        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    return _fetchone(f"SELECT * FROM users WHERE email = {_param()}", (email,))
 
 
 def _create_user(name: str, email: str, password: str):
@@ -160,11 +206,11 @@ def _create_user(name: str, email: str, password: str):
     }
     with _connect() as conn:
         conn.execute(
-            """
+            f"""
             INSERT INTO users (id, email, name, password_hash, created_at, updated_at)
-            VALUES (:id, :email, :name, :password_hash, :created_at, :updated_at)
+            VALUES ({_param()}, {_param()}, {_param()}, {_param()}, {_param()}, {_param()})
             """,
-            user,
+            (user["id"], user["email"], user["name"], user["password_hash"], user["created_at"], user["updated_at"]),
         )
     return _get_user_by_email(email)
 
@@ -175,20 +221,19 @@ def _create_session(response: Response, user_id: str) -> str:
     expires = datetime.now(timezone.utc) + timedelta(seconds=max_age)
     with _connect() as conn:
         conn.execute(
-            "INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
+            f"INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES ({_param()}, {_param()}, {_param()}, {_param()})",
             (token, user_id, _now(), expires.isoformat()),
         )
         conn.execute(
-            "DELETE FROM sessions WHERE expires_at < ?",
+            f"DELETE FROM sessions WHERE expires_at < {_param()}",
             (datetime.now(timezone.utc).isoformat(),),
         )
-    is_secure_cookie = False
     response.set_cookie(
         "matchiq_session",
         token,
         httponly=True,
         samesite="lax",
-        secure=is_secure_cookie,
+        secure=False,
         max_age=max_age,
         expires=expires,
         path="/",
@@ -206,20 +251,27 @@ def _session_token_from_request(request: Request) -> str | None:
     return request.headers.get("x-matchiq-session")
 
 
-def _current_user_from_request(request: Request) -> dict | None:
+def _current_user_from_request(request: Request):
     token = _session_token_from_request(request)
     if not token:
         return None
-    with _connect() as conn:
-        row = conn.execute(
-            """
-            SELECT users.* FROM sessions
-            JOIN users ON users.id = sessions.user_id
-            WHERE sessions.token = ? AND sessions.expires_at > ?
-            """,
-            (token, datetime.now(timezone.utc).isoformat()),
-        ).fetchone()
-    return row
+    return _fetchone(
+        f"""
+        SELECT users.* FROM sessions
+        JOIN users ON users.id = sessions.user_id
+        WHERE sessions.token = {_param()} AND sessions.expires_at > {_param()}
+        """,
+        (token, datetime.now(timezone.utc).isoformat()),
+    )
+
+
+@router.get("/health")
+def auth_health():
+    return {
+        "success": True,
+        "database": "postgres" if USE_POSTGRES else "sqlite",
+        "persistent": bool(USE_POSTGRES),
+    }
 
 
 @router.post("/register")
@@ -265,8 +317,8 @@ def logout(request: Request, response: Response):
     token = _session_token_from_request(request)
     if token:
         with _connect() as conn:
-            conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
-    response.delete_cookie("matchiq_session")
+            conn.execute(f"DELETE FROM sessions WHERE token = {_param()}", (token,))
+    response.delete_cookie("matchiq_session", path="/")
     return {"success": True}
 
 

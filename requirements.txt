@@ -7,3 +7,4 @@ moviepy
 numpy
 imageio-ffmpeg
 edge-tts
+psycopg[binary]
