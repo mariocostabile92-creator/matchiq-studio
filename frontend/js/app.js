@@ -41,6 +41,7 @@ const musicEnabled = document.getElementById("musicEnabled");
 const musicVolume = document.getElementById("musicVolume");
 const musicMood = document.getElementById("musicMood");
 const musicTrack = document.getElementById("musicTrack");
+const musicStartSeconds = document.getElementById("musicStartSeconds");
 const exportQuality = document.getElementById("exportQuality");
 const voiceEnabled = document.getElementById("voiceEnabled");
 const voiceVolume = document.getElementById("voiceVolume");
@@ -224,6 +225,7 @@ function getAudioSettings() {
     music_volume: musicTrack?.value ? Math.max(Number(musicVolume?.value || 0.14), 0.55) : Number(musicVolume?.value || 0.14),
     music_mood: musicMood?.value || "cinematic_lift",
     music_track_url: musicTrack?.value || "",
+    music_start_seconds: musicTrack?.value ? Math.max(0, Number(musicStartSeconds?.value || 0)) : 0,
     export_quality: exportQuality?.value || "pro_1080p",
     voice_enabled: Boolean(voiceEnabled?.checked),
     voice_volume: Number(voiceVolume?.value || 0.95),
@@ -361,7 +363,7 @@ function renderMediaAssets() {
         if (musicTrack) musicTrack.value = button.dataset.mediaUrl;
         if (musicEnabled) musicEnabled.checked = true;
         if (musicVolume) musicVolume.value = Math.max(Number(musicVolume.value || 0), 0.55);
-        setStatus("Traccia musicale selezionata per il prossimo render.", "Musica");
+        setStatus("Traccia selezionata. Puoi scegliere da che secondo far partire la musica.", "Musica");
         return;
       }
 
@@ -810,7 +812,7 @@ sceneMotionPreset.addEventListener("change", () => {
   updatePreviewFromScene();
 });
 
-[musicEnabled, musicVolume, musicMood, musicTrack, exportQuality, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
+[musicEnabled, musicVolume, musicMood, musicTrack, musicStartSeconds, exportQuality, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
   input?.addEventListener("input", () => {
     if (input === musicTrack && musicTrack?.value) {
       if (musicEnabled) musicEnabled.checked = true;

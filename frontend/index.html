@@ -87,7 +87,7 @@
       <button class="sidebar-fab" id="sidebarNewReelBtn" type="button">+ Nuovo Reel</button>
 
       <div class="phase-box">
-        <span>Studio V6.4 Audio Fix</span>
+        <span>Studio V6.5 Music Trim</span>
         <strong>Template Engine AI</strong>
         <p>Brief semplice, scene modificabili, immagini reali, voce, preview e render MP4.</p>
       </div>
@@ -111,7 +111,7 @@
 
       <section class="studio-hero studio-hero-v24 studio-dashboard-view" aria-label="Dashboard Premium MatchIQ Studio">
         <div class="studio-hero-copy">
-          <span class="hero-badge">Studio V6.4 Audio Fix</span>
+          <span class="hero-badge">Studio V6.5 Music Trim</span>
           <h2>Il tuo studio AI per creare reel.</h2>
           <p>
             Il tuo sistema operativo creativo per trasformare idee, partite, brand e sponsor
@@ -439,6 +439,10 @@
               </select>
             </label>
             <label>
+              Inizio traccia
+              <input id="musicStartSeconds" type="number" min="0" max="600" step="1" value="0" />
+            </label>
+            <label>
               Qualità export
               <select id="exportQuality">
                 <option value="draft">Anteprima veloce 720p</option>
@@ -679,8 +683,8 @@
     <a href="#render" data-nav-target="render"><span>X</span><b>Render</b></a>
   </nav>
 
-  <script src="/js/api.js?v=64"></script>
-  <script src="/js/app.js?v=64"></script>
-  <script src="/js/hook-engine.js?v=64"></script>
+  <script src="/js/api.js?v=65"></script>
+  <script src="/js/app.js?v=65"></script>
+  <script src="/js/hook-engine.js?v=65"></script>
 </body>
 </html>
