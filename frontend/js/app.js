@@ -226,7 +226,7 @@ function getAudioSettings() {
     music_mood: musicMood?.value || "cinematic_lift",
     music_track_url: musicTrack?.value || "",
     music_start_seconds: musicTrack?.value ? Math.max(0, Number(musicStartSeconds?.value || 0)) : 0,
-    export_quality: exportQuality?.value || "pro_1080p",
+    export_quality: exportQuality?.value || "turbo",
     voice_enabled: Boolean(voiceEnabled?.checked),
     voice_volume: Number(voiceVolume?.value || 0.95),
     voice_style: voiceStyle?.value || "studio",

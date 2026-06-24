@@ -18,7 +18,7 @@ def build_reel(
     music_mood: str = "cinematic_lift",
     music_track_url: str = "",
     music_start_seconds: float = 0,
-    export_quality: str = "pro_1080p",
+    export_quality: str = "turbo",
     voice_enabled: bool = True,
     voice_volume: float = 0.95,
     voice_style: str = "studio",

@@ -12,6 +12,8 @@ from backend.app.voice.voice_engine import synthesize_scene_voice
 from backend.app.video.storyboard import StoryboardPlan
 
 
+TURBO_WIDTH = 540
+TURBO_HEIGHT = 960
 DRAFT_WIDTH = 720
 DRAFT_HEIGHT = 1280
 FINAL_WIDTH = 1080
@@ -518,12 +520,26 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
     return VideoClip(frame_function=make_frame, duration=duration)
 
 def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = True, music_volume: float = 0.12, music_mood: str = "cinematic", music_track_url: str = "", music_start_seconds: float = 0, voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
+    is_turbo = quality == "turbo"
     is_draft = quality == "draft"
-    width, height = (DRAFT_WIDTH, DRAFT_HEIGHT) if is_draft else (FINAL_WIDTH, FINAL_HEIGHT)
-    fps = 20 if is_draft else 30
-    preset = "ultrafast" if is_draft else "medium"
-    video_bitrate = "2800k" if is_draft else "9500k"
-    audio_bitrate = "128k" if is_draft else "192k"
+    if is_turbo:
+        width, height = TURBO_WIDTH, TURBO_HEIGHT
+        fps = 15
+        preset = "ultrafast"
+        video_bitrate = "1400k"
+        audio_bitrate = "96k"
+    elif is_draft:
+        width, height = DRAFT_WIDTH, DRAFT_HEIGHT
+        fps = 20
+        preset = "ultrafast"
+        video_bitrate = "2800k"
+        audio_bitrate = "128k"
+    else:
+        width, height = FINAL_WIDTH, FINAL_HEIGHT
+        fps = 30
+        preset = "veryfast"
+        video_bitrate = "8500k"
+        audio_bitrate = "192k"
     reel_id = uuid4().hex[:10]
     work_dir = RENDERS_DIR / reel_id
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -540,7 +556,12 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
             _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
             clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing, visual_style, accent))
     if on_progress:
-        mode_label = "anteprima veloce" if is_draft else "qualita Pro 1080p"
+        if is_turbo:
+            mode_label = "Turbo preview"
+        elif is_draft:
+            mode_label = "anteprima qualità 720p"
+        else:
+            mode_label = "Finale Pro 1080p"
         on_progress(82, f"Sto esportando il file MP4 in {mode_label}...")
     final = concatenate_videoclips(clips, method="compose")
     total_duration = sum(scene.duration_seconds for scene in storyboard.scenes)
