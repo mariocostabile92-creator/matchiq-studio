@@ -220,8 +220,8 @@ function updateRenderStation(progress = 0, phase = "Pronto", message = "") {
 
 function getAudioSettings() {
   return {
-    music_enabled: Boolean(musicEnabled?.checked),
-    music_volume: Number(musicVolume?.value || 0.14),
+    music_enabled: Boolean(musicEnabled?.checked || musicTrack?.value),
+    music_volume: musicTrack?.value ? Math.max(Number(musicVolume?.value || 0.14), 0.55) : Number(musicVolume?.value || 0.14),
     music_mood: musicMood?.value || "cinematic_lift",
     music_track_url: musicTrack?.value || "",
     export_quality: exportQuality?.value || "pro_1080p",
@@ -360,6 +360,7 @@ function renderMediaAssets() {
       if (button.dataset.mediaType === "audio") {
         if (musicTrack) musicTrack.value = button.dataset.mediaUrl;
         if (musicEnabled) musicEnabled.checked = true;
+        if (musicVolume) musicVolume.value = Math.max(Number(musicVolume.value || 0), 0.55);
         setStatus("Traccia musicale selezionata per il prossimo render.", "Musica");
         return;
       }
@@ -811,6 +812,10 @@ sceneMotionPreset.addEventListener("change", () => {
 
 [musicEnabled, musicVolume, musicMood, musicTrack, exportQuality, voiceEnabled, voiceVolume, voiceStyle, voiceRate].forEach((input) => {
   input?.addEventListener("input", () => {
+    if (input === musicTrack && musicTrack?.value) {
+      if (musicEnabled) musicEnabled.checked = true;
+      if (musicVolume) musicVolume.value = Math.max(Number(musicVolume.value || 0), 0.55);
+    }
     const audioName = musicTrack?.value ? `traccia caricata ${musicTrack.selectedOptions?.[0]?.textContent || ""}` : `${musicMood?.selectedOptions?.[0]?.textContent || "Cinematic"}`;
     const audioState = musicEnabled?.checked ? `Musica ${audioName} attiva` : "Musica disattivata";
     const qualityState = (exportQuality?.value || "pro_1080p") === "draft" ? "Anteprima 720p" : "Export Pro 1080p";

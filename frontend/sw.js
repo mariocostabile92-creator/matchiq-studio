@@ -1,4 +1,4 @@
-const CACHE_NAME = "matchiq-studio-shell-v63";
+const CACHE_NAME = "matchiq-studio-shell-v64";
 
 const APP_SHELL = [
   "/",
@@ -12,9 +12,9 @@ const APP_SHELL = [
   "/assets/brand/matchiq-logo-official.png",
   "/assets/brand/matchiq-studio-primary.png",
   "/css/style.css",
-  "/js/api.js?v=63",
-  "/js/app.js?v=63",
-  "/js/hook-engine.js?v=63"
+  "/js/api.js?v=64",
+  "/js/app.js?v=64",
+  "/js/hook-engine.js?v=64"
 ];
 
 self.addEventListener("install", (event) => {

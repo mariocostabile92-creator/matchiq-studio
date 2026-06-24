@@ -551,7 +551,8 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
             on_progress(88, "Sto aggiungendo musica e mix audio...")
         custom_music_path = _uploaded_media_path(music_track_url)
         if custom_music_path:
-            base_music = AudioFileClip(str(custom_music_path)).with_volume_scaled(min(max(music_volume, 0.02), 0.32))
+            custom_music_gain = min(max(music_volume, 0.45), 0.85)
+            base_music = AudioFileClip(str(custom_music_path)).with_volume_scaled(custom_music_gain)
             loops = max(1, int(total_duration // max(.1, base_music.duration)) + 1)
             music_audio = concatenate_audioclips([base_music] * loops).subclipped(0, total_duration)
             audio_clips_to_close.append(base_music)
