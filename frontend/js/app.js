@@ -53,6 +53,7 @@ const mediaUploadStatus = document.getElementById("mediaUploadStatus");
 const mediaAssetGrid = document.getElementById("mediaAssetGrid");
 const autoAssignMediaBtn = document.getElementById("autoAssignMediaBtn");
 const clearSceneImageBtn = document.getElementById("clearSceneImageBtn");
+const clearAllSceneImagesBtn = document.getElementById("clearAllSceneImagesBtn");
 const easyCreateBtn = document.getElementById("easyCreateBtn");
 const easyBrand = document.getElementById("easyBrand");
 const easyGoal = document.getElementById("easyGoal");
@@ -414,15 +415,42 @@ function autoAssignMediaToScenes() {
   setStatus("Immagini distribuite sulle scene vuote.", "Media");
 }
 
+function resetSceneMedia(sceneItem) {
+  if (!sceneItem) return;
+  sceneItem.image_url = "";
+  sceneItem.media_type = "";
+  sceneItem.visual_layout = "auto";
+}
+
 function clearSelectedSceneImage() {
   const activeScene = currentStoryboard?.scenes?.[selectedSceneIndex];
-  if (!activeScene) return;
+  if (!activeScene) {
+    setStatus("Seleziona prima una scena da pulire.", "Media");
+    return;
+  }
 
-  activeScene.image_url = "";
-  sceneImageInput.value = "";
+  resetSceneMedia(activeScene);
+  if (sceneImageInput) sceneImageInput.value = "";
+  if (sceneLayoutInput) sceneLayoutInput.value = "auto";
+  fillSceneEditor();
   updateTimeline();
   updatePreviewFromScene();
-  setStatus("Immagine rimossa dalla scena selezionata.", "Media");
+  setStatus(`Scena ${activeScene.index || selectedSceneIndex + 1} pulita: media rimossi.`, "Media");
+}
+
+function clearAllSceneImages() {
+  if (!currentStoryboard?.scenes?.length) {
+    setStatus("Crea prima uno storyboard.", "Media");
+    return;
+  }
+
+  currentStoryboard.scenes.forEach(resetSceneMedia);
+  if (sceneImageInput) sceneImageInput.value = "";
+  if (sceneLayoutInput) sceneLayoutInput.value = "auto";
+  fillSceneEditor();
+  updateTimeline();
+  updatePreviewFromScene();
+  setStatus("Tutte le scene sono state pulite dai media assegnati.", "Media");
 }
 
 async function loadMediaAssets() {
@@ -832,6 +860,7 @@ mediaUploadInput?.addEventListener("change", handleMediaUpload);
 musicUploadInput?.addEventListener("change", handleMediaUpload);
 autoAssignMediaBtn?.addEventListener("click", autoAssignMediaToScenes);
 clearSceneImageBtn?.addEventListener("click", clearSelectedSceneImage);
+clearAllSceneImagesBtn?.addEventListener("click", clearAllSceneImages);
 
 generateBtn.addEventListener("click", generateReel);
 generateTopBtn.addEventListener("click", generateReel);
