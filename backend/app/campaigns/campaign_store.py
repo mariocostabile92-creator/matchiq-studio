@@ -14,13 +14,12 @@ def _now():
 
 
 def _load_raw() -> list[dict]:
-    if not CAMPAIGNS_FILE.exists():
+    try:
+        raw = CAMPAIGNS_FILE.read_text(encoding="utf-8")
+    except FileNotFoundError:
         return []
 
-    try:
-        return json.loads(CAMPAIGNS_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return []
+    return json.loads(raw)
 
 
 def _save_raw(items: list[dict]) -> None:

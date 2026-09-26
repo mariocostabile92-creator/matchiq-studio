@@ -180,6 +180,65 @@ class OwnershipIsolationTests(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertEqual(campaign_store.get_campaign(campaign_a["id"], self.user_a_id).project_id, project_a["id"])
 
+    def test_standalone_campaign_is_owned_and_private(self):
+        campaign = self._create_campaign(self.user_a, "Standalone campaign")
+        stored = json.loads(campaign_store.CAMPAIGNS_FILE.read_text(encoding="utf-8"))
+        record = next(item for item in stored if item["id"] == campaign["id"])
+        self.assertIsNone(record["project_id"])
+        self.assertEqual(record["owner_user_id"], self.user_a_id)
+        self.assertEqual(self.user_a.request("GET", f"/api/campaigns/{campaign['id']}")[0], 200)
+        self.assertEqual(self.user_b.request("GET", f"/api/campaigns/{campaign['id']}")[0], 404)
+        self.assertEqual(
+            self.user_b.request("PUT", f"/api/campaigns/{campaign['id']}", json_body={"name": "stolen"})[0],
+            404,
+        )
+
+    def test_update_payload_cannot_transfer_project_or_campaign_ownership(self):
+        project = self._create_project(self.user_a, "Owned project")
+        status, _, data = self.user_a.request(
+            "PUT", f"/api/projects/{project['id']}",
+            json_body={"name": "Still owned", "owner_user_id": self.user_b_id},
+        )
+        self.assertEqual(status, 200, data)
+        project_items = json.loads(project_store.PROJECTS_FILE.read_text(encoding="utf-8"))
+        self.assertEqual(next(item for item in project_items if item["id"] == project["id"])["owner_user_id"], self.user_a_id)
+        self.assertEqual(self.user_b.request("GET", f"/api/projects/{project['id']}")[0], 404)
+
+        campaign = self._create_campaign(self.user_a, "Owned standalone campaign")
+        status, _, data = self.user_a.request(
+            "PUT", f"/api/campaigns/{campaign['id']}",
+            json_body={"name": "Still owned", "owner_user_id": self.user_b_id},
+        )
+        self.assertEqual(status, 200, data)
+        campaign_items = json.loads(campaign_store.CAMPAIGNS_FILE.read_text(encoding="utf-8"))
+        self.assertEqual(next(item for item in campaign_items if item["id"] == campaign["id"])["owner_user_id"], self.user_a_id)
+        self.assertEqual(self.user_b.request("GET", f"/api/campaigns/{campaign['id']}")[0], 404)
+
+    def test_missing_and_valid_empty_json_stores_allow_creation(self):
+        self.assertFalse(project_store.PROJECTS_FILE.exists())
+        self.assertFalse(campaign_store.CAMPAIGNS_FILE.exists())
+        self._create_project(self.user_a, "Created with absent project store")
+        self._create_campaign(self.user_a, "Created with absent campaign store")
+
+        project_store.PROJECTS_FILE.write_text("[]", encoding="utf-8")
+        campaign_store.CAMPAIGNS_FILE.write_text("[]", encoding="utf-8")
+        self._create_project(self.user_a, "Created with empty project store")
+        self._create_campaign(self.user_a, "Created with empty campaign store")
+
+    def test_malformed_json_fails_without_overwriting_existing_storage(self):
+        invalid_projects = b'{"records":['
+        invalid_campaigns = b'{"records":['
+        project_store.PROJECTS_FILE.write_bytes(invalid_projects)
+        campaign_store.CAMPAIGNS_FILE.write_bytes(invalid_campaigns)
+
+        with self.assertRaises(json.JSONDecodeError):
+            self.user_a.request("POST", "/api/projects", json_body={"name": "must not be written"})
+        with self.assertRaises(json.JSONDecodeError):
+            self.user_a.request("POST", "/api/campaigns", json_body={"name": "must not be written"})
+
+        self.assertEqual(project_store.PROJECTS_FILE.read_bytes(), invalid_projects)
+        self.assertEqual(campaign_store.CAMPAIGNS_FILE.read_bytes(), invalid_campaigns)
+
     def test_legacy_records_are_quarantined_and_preserved(self):
         legacy_project = {
             "id": "legacy-project-id", "name": "Legacy project",
