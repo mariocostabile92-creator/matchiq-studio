@@ -13,16 +13,16 @@ router = APIRouter(prefix="/api/projects", tags=["Projects"], dependencies=[Depe
 
 
 @router.get("", response_model=ProjectListResponse)
-def get_projects():
+def get_projects(current_user=Depends(get_current_user)):
     return ProjectListResponse(
         success=True,
-        projects=list_projects(),
+        projects=list_projects(current_user["id"]),
     )
 
 
 @router.get("/{project_id}", response_model=ProjectRecord)
-def read_project(project_id: str):
-    project = get_project(project_id)
+def read_project(project_id: str, current_user=Depends(get_current_user)):
+    project = get_project(project_id, current_user["id"])
 
     if not project:
         raise HTTPException(status_code=404, detail="Progetto non trovato.")
@@ -31,8 +31,8 @@ def read_project(project_id: str):
 
 
 @router.post("", response_model=ProjectSaveResponse)
-def create_project(payload: ProjectPayload):
-    project = save_project(payload)
+def create_project(payload: ProjectPayload, current_user=Depends(get_current_user)):
+    project = save_project(payload, current_user["id"])
 
     return ProjectSaveResponse(
         success=True,
@@ -42,8 +42,11 @@ def create_project(payload: ProjectPayload):
 
 
 @router.put("/{project_id}", response_model=ProjectSaveResponse)
-def update_project(project_id: str, payload: ProjectPayload):
-    project = save_project(payload, project_id=project_id)
+def update_project(project_id: str, payload: ProjectPayload, current_user=Depends(get_current_user)):
+    project = save_project(payload, current_user["id"], project_id=project_id)
+
+    if project is None:
+        raise HTTPException(status_code=404, detail="Progetto non trovato.")
 
     return ProjectSaveResponse(
         success=True,

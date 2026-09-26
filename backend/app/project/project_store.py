@@ -30,26 +30,30 @@ def _save_raw(items: list[dict]) -> None:
     )
 
 
-def list_projects() -> list[ProjectRecord]:
-    items = _load_raw()
+def list_projects(owner_user_id: str) -> list[ProjectRecord]:
+    items = [item for item in _load_raw() if item.get("owner_user_id") == owner_user_id]
     items.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
     return [ProjectRecord(**item) for item in items]
 
 
-def get_project(project_id: str) -> ProjectRecord | None:
+def get_project(project_id: str, owner_user_id: str) -> ProjectRecord | None:
     for item in _load_raw():
-        if item.get("id") == project_id:
+        if item.get("id") == project_id and item.get("owner_user_id") == owner_user_id:
             return ProjectRecord(**item)
     return None
 
 
-def save_project(payload: ProjectPayload, project_id: str | None = None) -> ProjectRecord:
+def save_project(
+    payload: ProjectPayload,
+    owner_user_id: str,
+    project_id: str | None = None,
+) -> ProjectRecord | None:
     items = _load_raw()
     now = _now()
 
     if project_id:
         for index, item in enumerate(items):
-            if item.get("id") == project_id:
+            if item.get("id") == project_id and item.get("owner_user_id") == owner_user_id:
                 updated = {
                     **item,
                     **payload.model_dump(),
@@ -58,9 +62,11 @@ def save_project(payload: ProjectPayload, project_id: str | None = None) -> Proj
                 items[index] = updated
                 _save_raw(items)
                 return ProjectRecord(**updated)
+        return None
 
     created = {
         "id": uuid4().hex[:12],
+        "owner_user_id": owner_user_id,
         "created_at": now,
         "updated_at": now,
         **payload.model_dump(),
