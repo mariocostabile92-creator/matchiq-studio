@@ -1,13 +1,14 @@
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from backend.app.core.config import UPLOADS_DIR
+from backend.app.routers.auth import get_current_user
 
 
-router = APIRouter(prefix="/api/media", tags=["Media"])
+router = APIRouter(prefix="/api/media", tags=["Media"], dependencies=[Depends(get_current_user)])
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v"}

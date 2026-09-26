@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from backend.app.routers.auth import get_current_user
 from backend.app.project.project_store import get_project, list_projects, save_project
 from backend.app.schemas.project import (
     ProjectListResponse,
@@ -8,7 +9,7 @@ from backend.app.schemas.project import (
     ProjectSaveResponse,
 )
 
-router = APIRouter(prefix="/api/projects", tags=["Projects"])
+router = APIRouter(prefix="/api/projects", tags=["Projects"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=ProjectListResponse)

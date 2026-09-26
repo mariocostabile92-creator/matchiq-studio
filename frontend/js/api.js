@@ -58,29 +58,37 @@ function authHeaders(extra = {}) {
   return token ? {...extra, Authorization: `Bearer ${token}`} : extra;
 }
 
+async function authenticatedFetch(url, options = {}) {
+  const response = await fetch(url, {...options, credentials: "same-origin"});
+  if (response.status === 401) {
+    window.dispatchEvent(new Event("matchiq:unauthorized"));
+  }
+  return response;
+}
+
 async function createReel(payload) {
-  const response = await fetch("/api/reels/create", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await authenticatedFetch("/api/reels/create", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante l'avvio della generazione.");
   return data;
 }
 
 async function createStoryboard(payload) {
-  const response = await fetch("/api/reels/storyboard", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await authenticatedFetch("/api/reels/storyboard", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante la creazione dello storyboard.");
   return data;
 }
 
 async function generateHooks(payload) {
-  const response = await fetch("/api/reels/generate-hooks", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await authenticatedFetch("/api/reels/generate-hooks", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante la generazione degli hook.");
   return data;
 }
 
 async function renderStoryboard(payload) {
-  const response = await fetch("/api/reels/render-storyboard", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await authenticatedFetch("/api/reels/render-storyboard", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   let data = {};
   try { data = await response.json(); } catch { data = { detail: response.statusText }; }
   if (!response.ok) {
@@ -113,14 +121,14 @@ async function renderStoryboard(payload) {
 }
 
 async function getReelStatus(jobId) {
-  const response = await fetch(`/api/reels/status/${jobId}`);
+  const response = await authenticatedFetch(`/api/reels/status/${jobId}`);
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante il controllo del Reel.");
   return data;
 }
 
 async function listMediaAssets() {
-  const response = await fetch("/api/media");
+  const response = await authenticatedFetch("/api/media");
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante il caricamento della media library.");
   return data;
@@ -129,14 +137,14 @@ async function listMediaAssets() {
 async function uploadMediaAsset(file) {
   const formData = new FormData();
   formData.append("file", file);
-  const response = await fetch("/api/media/upload", {method:"POST",body:formData});
+  const response = await authenticatedFetch("/api/media/upload", {method:"POST",body:formData});
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante l'upload del media.");
   return data;
 }
 
 async function regenerateScene(payload) {
-  const response = await fetch("/api/reels/regenerate-scene", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const response = await authenticatedFetch("/api/reels/regenerate-scene", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Errore durante la rigenerazione della scena.");
   return data;
@@ -160,7 +168,7 @@ async function registerUser(payload) {
 }
 
 async function getCurrentUser() {
-  const response = await fetch("/api/auth/me", {credentials:"include", headers: authHeaders()});
+  const response = await authenticatedFetch("/api/auth/me", {headers: authHeaders()});
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || "Non autenticato.");
   setStoredSession(data);

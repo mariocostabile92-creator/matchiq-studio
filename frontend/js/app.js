@@ -119,6 +119,12 @@ function showAuth(message = "Accedi o crea un account per continuare.") {
   if (authStatus) authStatus.textContent = message;
 }
 
+window.addEventListener("matchiq:unauthorized", () => {
+  if (typeof clearStoredSession === "function") clearStoredSession();
+  currentUser = null;
+  showAuth("La sessione è scaduta o non è valida. Accedi di nuovo.");
+});
+
 async function bootAuth() {
   const cachedUser = typeof getStoredUser === "function" ? getStoredUser() : null;
   const remembered = typeof hasRememberedWorkspace === "function" ? hasRememberedWorkspace() : !!cachedUser;

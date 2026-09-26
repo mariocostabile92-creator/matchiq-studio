@@ -7,7 +7,7 @@ import sqlite3
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from backend.app.core.config import STORAGE_DIR
@@ -21,6 +21,14 @@ SQLITE_PATH = AUTH_DIR / "matchiq_auth.sqlite3"
 DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
 USE_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
 AUTH_DIR.mkdir(parents=True, exist_ok=True)
+
+
+class _ClosingSQLiteConnection(sqlite3.Connection):
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
 
 
 class RegisterRequest(BaseModel):
@@ -47,7 +55,7 @@ def _connect():
             raise RuntimeError("DATABASE_URL richiede psycopg. Aggiungi psycopg[binary] a requirements.txt.") from exc
         return psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
-    conn = sqlite3.connect(SQLITE_PATH, timeout=20)
+    conn = sqlite3.connect(SQLITE_PATH, timeout=20, factory=_ClosingSQLiteConnection)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -265,6 +273,13 @@ def _current_user_from_request(request: Request):
     )
 
 
+def get_current_user(request: Request):
+    user = _current_user_from_request(request)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Sessione assente, non valida o scaduta.")
+    return user
+
+
 @router.get("/health")
 def auth_health():
     return {
@@ -305,10 +320,7 @@ def login(payload: LoginRequest, response: Response):
 
 
 @router.get("/me")
-def me(request: Request):
-    user = _current_user_from_request(request)
-    if not user:
-        return {"success": False, "user": None}
+def me(user=Depends(get_current_user)):
     return {"success": True, "user": _public_user(user)}
 
 

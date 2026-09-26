@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from backend.app.routers.auth import get_current_user
 from backend.app.campaigns.campaign_store import get_campaign, list_campaigns, save_campaign
 from backend.app.schemas.campaign import (
     CampaignListResponse,
@@ -8,7 +9,7 @@ from backend.app.schemas.campaign import (
     CampaignSaveResponse,
 )
 
-router = APIRouter(prefix="/api/campaigns", tags=["Campaigns"])
+router = APIRouter(prefix="/api/campaigns", tags=["Campaigns"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=CampaignListResponse)

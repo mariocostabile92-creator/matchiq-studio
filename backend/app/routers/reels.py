@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.app.schemas.reel import (
     HookGenerateRequest,
@@ -14,11 +14,12 @@ from backend.app.schemas.reel import (
 )
 from backend.app.ai.creative_director import build_storyboard, generate_hooks
 from backend.app.ai.scene_regenerator import regenerate_scene
+from backend.app.routers.auth import get_current_user
 from backend.app.render.reel_renderer import render_storyboard
 from backend.app.services.reel_engine import build_reel
 from backend.app.video.storyboard import StoryboardPlan
 
-router = APIRouter(prefix="/api/reels", tags=["Reels"])
+router = APIRouter(prefix="/api/reels", tags=["Reels"], dependencies=[Depends(get_current_user)])
 
 executor = ThreadPoolExecutor(max_workers=1)
 JOBS = {}

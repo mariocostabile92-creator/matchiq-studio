@@ -1,5 +1,5 @@
 async function listCampaigns() {
-  const response = await fetch("/api/campaigns");
+  const response = await authenticatedFetch("/api/campaigns");
   const data = await response.json();
 
   if (!response.ok) {
@@ -10,7 +10,7 @@ async function listCampaigns() {
 }
 
 async function saveCampaign(payload, campaignId = null) {
-  const response = await fetch(campaignId ? `/api/campaigns/${campaignId}` : "/api/campaigns", {
+  const response = await authenticatedFetch(campaignId ? `/api/campaigns/${campaignId}` : "/api/campaigns", {
     method: campaignId ? "PUT" : "POST",
     headers: {
       "Content-Type": "application/json",
