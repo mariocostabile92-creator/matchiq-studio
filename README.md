@@ -5,6 +5,9 @@ MatchIQ Studio e' una prima console per creare contenuti verticali. Non e' pensa
 ## Avvio locale
 
 ```powershell
+$env:SESSION_COOKIE_SECURE = "false"
+$env:CORS_ALLOWED_ORIGINS = "http://127.0.0.1:8000,http://localhost:8000"
+$env:ALLOWED_HOSTS = "127.0.0.1,localhost"
 .\.venv\Scripts\python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -13,6 +16,8 @@ Poi apri:
 ```text
 http://127.0.0.1:8000
 ```
+
+In produzione, lascia `SESSION_COOKIE_SECURE=true` e limita `CORS_ALLOWED_ORIGINS` e `ALLOWED_HOSTS` ai domini pubblici effettivamente usati.
 
 ## Deploy preview
 

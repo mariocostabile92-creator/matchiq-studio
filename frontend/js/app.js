@@ -126,25 +126,19 @@ window.addEventListener("matchiq:unauthorized", () => {
 });
 
 async function bootAuth() {
-  const cachedUser = typeof getStoredUser === "function" ? getStoredUser() : null;
-  const remembered = typeof hasRememberedWorkspace === "function" ? hasRememberedWorkspace() : !!cachedUser;
-
-  if (cachedUser || remembered) {
-    showApp(cachedUser || {name: "Creator", email: ""});
-    if (authStatus) authStatus.textContent = "Workspace recuperato.";
-  }
+  clearStoredSession();
 
   try {
     const data = await getCurrentUser();
     if (data?.user) {
-      if (typeof setStoredSession === "function") setStoredSession(data);
       showApp(data.user);
+      return;
     }
-  } catch {
-    if (!cachedUser && !remembered) {
-      showAuth("Accedi oppure registrati per creare il tuo workspace.");
-    }
-  }
+  } catch {}
+
+  clearStoredSession();
+  currentUser = null;
+  showAuth("Accedi oppure registrati per creare il tuo workspace.");
 }
 
 loginTab?.addEventListener("click", () => setAuthMode("login"));

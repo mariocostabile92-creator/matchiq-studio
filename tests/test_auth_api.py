@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from io import BytesIO
 import sqlite3
 import tempfile
@@ -10,6 +11,11 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from unittest.mock import patch
 from PIL import Image
+
+
+os.environ["SESSION_COOKIE_SECURE"] = "false"
+os.environ["CORS_ALLOWED_ORIGINS"] = "https://studio.matchiq.it.com,http://127.0.0.1:8000,http://localhost:8000"
+os.environ["ALLOWED_HOSTS"] = "studio.matchiq.it.com,127.0.0.1,localhost,test-server,testserver"
 
 from backend.app.core import config
 
@@ -31,15 +37,23 @@ class ASGITestClient:
     def __init__(self):
         self.cookies = {}
 
-    def request(self, method, url, json_body=None, headers=None, body=None):
+    def request(self, method, url, json_body=None, headers=None, body=None, omit_origin=False):
         parsed = urlsplit(url)
         request_headers = {key.lower(): value for key, value in (headers or {}).items()}
+        request_headers = {key: value for key, value in request_headers.items() if value is not None}
+        request_headers.setdefault("host", "test-server")
         if json_body is not None:
             body = json.dumps(json_body).encode("utf-8")
             request_headers.setdefault("content-type", "application/json")
         body = body or b""
         if "cookie" not in request_headers and self.cookies:
             request_headers["cookie"] = "; ".join(f"{name}={value}" for name, value in self.cookies.items())
+        if (
+            not omit_origin
+            and method.upper() in {"POST", "PUT", "PATCH", "DELETE"}
+            and "matchiq_session" in self.cookies
+        ):
+            request_headers.setdefault("origin", "http://127.0.0.1:8000")
         raw_headers = [(key.encode("latin-1"), value.encode("latin-1")) for key, value in request_headers.items()]
         messages = []
         received = False
@@ -190,15 +204,19 @@ class CentralAuthenticationTests(unittest.TestCase):
                 client.cookies["matchiq_session"] = token
                 self.assertEqual(client.request("GET", "/api/auth/me")[0], 401)
 
-    def test_bearer_and_legacy_session_header_are_supported(self):
+    def test_bearer_is_supported_and_legacy_session_header_is_rejected(self):
         token = self.user_a.cookies["matchiq_session"]
-        for header_name in ("Authorization", "X-MatchIQ-Session"):
-            client = ASGITestClient()
-            status, _, data = client.request(
-                "GET", "/api/auth/me", headers={header_name: f"Bearer {token}" if header_name == "Authorization" else token},
-            )
-            self.assertEqual(status, 200)
-            self.assertEqual(data["user"]["email"], "user-a@example.test")
+        client = ASGITestClient()
+        status, _, data = client.request(
+            "GET", "/api/auth/me", headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["user"]["email"], "user-a@example.test")
+        legacy = ASGITestClient()
+        self.assertEqual(
+            legacy.request("GET", "/api/auth/me", headers={"X-MatchIQ-Session": token})[0],
+            401,
+        )
 
     def test_both_users_can_access_authenticated_workflow_apis(self):
         self.assertEqual(self.user_a.request("GET", "/")[0], 200)

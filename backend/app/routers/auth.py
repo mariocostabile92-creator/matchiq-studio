@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-from backend.app.core.config import STORAGE_DIR
+from backend.app.core.config import SESSION_COOKIE_SECURE, STORAGE_DIR
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -99,23 +99,6 @@ def _insert_user_ignore(conn, user: dict) -> None:
         )
 
 
-def _insert_session_ignore(conn, token: str, user_id: str, created_at: str, expires_at: str) -> None:
-    if USE_POSTGRES:
-        conn.execute(
-            """
-            INSERT INTO sessions (token, user_id, created_at, expires_at)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (token) DO NOTHING
-            """,
-            (token, user_id, created_at, expires_at),
-        )
-    else:
-        conn.execute(
-            "INSERT OR IGNORE INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
-            (token, user_id, created_at, expires_at),
-        )
-
-
 def _init_db() -> None:
     with _connect() as conn:
         conn.execute("""
@@ -153,14 +136,7 @@ def _init_db() -> None:
                 "updated_at": _now(),
             })
 
-        legacy_sessions = _read_json(SESSIONS_PATH, {})
-        expires_at = (datetime.now(timezone.utc) + timedelta(days=180)).isoformat()
-        for token, session in legacy_sessions.items():
-            if not token or not isinstance(session, dict):
-                continue
-            user_id = session.get("user_id")
-            if user_id:
-                _insert_session_ignore(conn, token, user_id, session.get("created_at") or _now(), expires_at)
+        # Legacy JSON sessions have no reliable revocation/expiry history; require a fresh login.
 
 
 def _hash_password(password: str, salt: str | None = None) -> str:
@@ -223,7 +199,7 @@ def _create_user(name: str, email: str, password: str):
     return _get_user_by_email(email)
 
 
-def _create_session(response: Response, user_id: str) -> str:
+def _create_session(response: Response, user_id: str) -> None:
     token = secrets.token_urlsafe(40)
     max_age = 60 * 60 * 24 * 180
     expires = datetime.now(timezone.utc) + timedelta(seconds=max_age)
@@ -241,22 +217,26 @@ def _create_session(response: Response, user_id: str) -> str:
         token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=SESSION_COOKIE_SECURE,
         max_age=max_age,
         expires=expires,
         path="/",
     )
-    return token
 
 
 def _session_token_from_request(request: Request) -> str | None:
-    token = request.cookies.get("matchiq_session")
-    if token:
-        return token
-    auth_header = request.headers.get("authorization", "")
-    if auth_header.lower().startswith("bearer "):
-        return auth_header.split(" ", 1)[1].strip()
-    return request.headers.get("x-matchiq-session")
+    cookie_present = "matchiq_session" in request.cookies
+    authorization = request.headers.get("authorization")
+    if cookie_present and authorization is not None:
+        raise HTTPException(status_code=401, detail="Invia una sola credenziale per richiesta.")
+    if authorization is not None:
+        scheme, separator, token = authorization.partition(" ")
+        if scheme.lower() != "bearer" or not separator or not token.strip():
+            raise HTTPException(status_code=401, detail="Credenziale Authorization non valida.")
+        return token.strip()
+    if cookie_present:
+        return request.cookies.get("matchiq_session") or ""
+    return None
 
 
 def _current_user_from_request(request: Request):
@@ -282,11 +262,7 @@ def get_current_user(request: Request):
 
 @router.get("/health")
 def auth_health():
-    return {
-        "success": True,
-        "database": "postgres" if USE_POSTGRES else "sqlite",
-        "persistent": bool(USE_POSTGRES),
-    }
+    return {"success": True}
 
 
 @router.post("/register")
@@ -295,18 +271,17 @@ def register(payload: RegisterRequest, response: Response):
     existing_user = _get_user_by_email(email)
     if existing_user:
         if _verify_password(payload.password, existing_user["password_hash"]):
-            session_token = _create_session(response, existing_user["id"])
+            _create_session(response, existing_user["id"])
             return {
                 "success": True,
                 "message": "Account gia esistente. Accesso effettuato.",
                 "user": _public_user(existing_user),
-                "session_token": session_token,
             }
         return {"success": False, "message": "Esiste gia un account con questa email. Usa Login con la password corretta."}
 
     user = _create_user(payload.name, email, payload.password)
-    session_token = _create_session(response, user["id"])
-    return {"success": True, "user": _public_user(user), "session_token": session_token}
+    _create_session(response, user["id"])
+    return {"success": True, "user": _public_user(user)}
 
 
 @router.post("/login")
@@ -315,8 +290,8 @@ def login(payload: LoginRequest, response: Response):
     user = _get_user_by_email(email)
     if not user or not _verify_password(payload.password, user["password_hash"]):
         return {"success": False, "message": "Email o password non corretti. Se e il primo accesso usa Registrazione."}
-    session_token = _create_session(response, user["id"])
-    return {"success": True, "user": _public_user(user), "session_token": session_token}
+    _create_session(response, user["id"])
+    return {"success": True, "user": _public_user(user)}
 
 
 @router.get("/me")
@@ -330,7 +305,13 @@ def logout(request: Request, response: Response):
     if token:
         with _connect() as conn:
             conn.execute(f"DELETE FROM sessions WHERE token = {_param()}", (token,))
-    response.delete_cookie("matchiq_session", path="/")
+    response.delete_cookie(
+        "matchiq_session",
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=SESSION_COOKIE_SECURE,
+    )
     return {"success": True}
 
 

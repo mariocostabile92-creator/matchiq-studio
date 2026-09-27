@@ -3,7 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.app.core.config import APP_NAME, APP_VERSION, FRONTEND_DIR
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+from backend.app.core.config import (
+    ALLOWED_HOSTS,
+    APP_NAME,
+    APP_VERSION,
+    CORS_ALLOWED_ORIGINS,
+    FRONTEND_DIR,
+)
+from backend.app.core.security import CookieOriginMiddleware
 from backend.app.routers import auth, campaigns, files, media, projects, reels
 
 app = FastAPI(
@@ -13,11 +22,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=list(CORS_ALLOWED_ORIGINS),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "HEAD", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+app.add_middleware(CookieOriginMiddleware, allowed_origins=CORS_ALLOWED_ORIGINS)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(ALLOWED_HOSTS))
 
 
 @app.middleware("http")

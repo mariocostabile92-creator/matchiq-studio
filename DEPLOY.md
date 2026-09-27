@@ -45,3 +45,15 @@ Controlla:
 - upload immagine
 - render senza voice-over
 - manifest PWA in HTTPS
+
+## Variabili di sicurezza
+
+Configura nel servizio web Railway:
+
+```text
+SESSION_COOKIE_SECURE=true
+CORS_ALLOWED_ORIGINS=https://studio.matchiq.it.com
+ALLOWED_HOSTS=studio.matchiq.it.com
+```
+
+Questi sono anche i default chiusi dell'applicazione: non usa origini o host wildcard. Per sviluppo HTTP locale imposta esplicitamente `SESSION_COOKIE_SECURE=false`, `CORS_ALLOWED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000` e `ALLOWED_HOSTS=127.0.0.1,localhost`.

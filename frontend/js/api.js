@@ -1,61 +1,8 @@
-const MATCHIQ_SESSION_KEY = "matchiq_session_token";
-const MATCHIQ_USER_KEY = "matchiq_user";
-const MATCHIQ_AUTH_FLAG = "matchiq_auth_remembered";
-const MATCHIQ_AUTH_TIME = "matchiq_auth_saved_at";
-
-function storageSafe() {
-  try {
-    const testKey = "__matchiq_storage_test__";
-    localStorage.setItem(testKey, "1");
-    localStorage.removeItem(testKey);
-    return localStorage;
-  } catch {
-    return sessionStorage;
-  }
-}
-
-function getStoredSessionToken() {
-  try { return storageSafe().getItem(MATCHIQ_SESSION_KEY) || ""; }
-  catch { return ""; }
-}
-
-function setStoredSession(data) {
-  try {
-    const store = storageSafe();
-    if (data?.session_token) store.setItem(MATCHIQ_SESSION_KEY, data.session_token);
-    if (data?.user) {
-      store.setItem(MATCHIQ_USER_KEY, JSON.stringify(data.user));
-      store.setItem(MATCHIQ_AUTH_FLAG, "yes");
-      store.setItem(MATCHIQ_AUTH_TIME, String(Date.now()));
-    }
-  } catch {
-    // If browser storage is unavailable, cookie auth still works.
-  }
-}
-
 function clearStoredSession() {
-  try {
-    const store = storageSafe();
-    store.removeItem(MATCHIQ_SESSION_KEY);
-    store.removeItem(MATCHIQ_USER_KEY);
-    store.removeItem(MATCHIQ_AUTH_FLAG);
-    store.removeItem(MATCHIQ_AUTH_TIME);
-  } catch {}
-}
-
-function getStoredUser() {
-  try { return JSON.parse(storageSafe().getItem(MATCHIQ_USER_KEY) || "null"); }
-  catch { return null; }
-}
-
-function hasRememberedWorkspace() {
-  try { return storageSafe().getItem(MATCHIQ_AUTH_FLAG) === "yes" && !!getStoredUser(); }
-  catch { return false; }
-}
-
-function authHeaders(extra = {}) {
-  const token = getStoredSessionToken();
-  return token ? {...extra, Authorization: `Bearer ${token}`} : extra;
+  const legacyKeys = ["matchiq_session_token", "matchiq_user", "matchiq_auth_remembered", "matchiq_auth_saved_at"];
+  for (const name of ["localStorage", "sessionStorage"]) {
+    try { legacyKeys.forEach((key) => window[name].removeItem(key)); } catch {}
+  }
 }
 
 async function authenticatedFetch(url, options = {}) {
@@ -152,33 +99,35 @@ async function regenerateScene(payload) {
 
 
 async function loginUser(payload) {
-  const response = await fetch("/api/auth/login", {method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  clearStoredSession();
+  const response = await authenticatedFetch("/api/auth/login", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || data.message || "Login non riuscito.");
-  setStoredSession(data);
   return data;
 }
 
 async function registerUser(payload) {
-  const response = await fetch("/api/auth/register", {method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  clearStoredSession();
+  const response = await authenticatedFetch("/api/auth/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || data.message || "Registrazione non riuscita.");
-  setStoredSession(data);
   return data;
 }
 
 async function getCurrentUser() {
-  const response = await authenticatedFetch("/api/auth/me", {headers: authHeaders()});
+  const response = await authenticatedFetch("/api/auth/me");
   const data = await response.json();
   if (!response.ok || data.success === false) throw new Error(data.detail || "Non autenticato.");
-  setStoredSession(data);
   return data;
 }
 
 async function logoutUser() {
-  const response = await fetch("/api/auth/logout", {method:"POST",credentials:"include",headers:authHeaders()});
-  const data = await response.json();
-  clearStoredSession();
-  if (!response.ok) throw new Error(data.detail || "Logout non riuscito.");
-  return data;
+  try {
+    const response = await authenticatedFetch("/api/auth/logout", {method:"POST"});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "Logout non riuscito.");
+    return data;
+  } finally {
+    clearStoredSession();
+  }
 }
