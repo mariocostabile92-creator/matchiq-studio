@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from uuid import uuid4
 
 import numpy as np
@@ -7,6 +8,7 @@ from moviepy import AudioFileClip, CompositeAudioClip, VideoClip, VideoFileClip,
 
 from backend.app.core.config import RENDERS_DIR, UPLOADS_DIR
 from backend.app.core.config import FRONTEND_DIR
+from backend.app.core.private_files import contained_regular_file, user_storage_dir
 from backend.app.music.music_engine import build_music_bed
 from backend.app.voice.voice_engine import synthesize_scene_voice
 from backend.app.video.storyboard import StoryboardPlan
@@ -104,15 +106,27 @@ def _paste_shadowed(canvas: Image.Image, foreground: Image.Image, x: int, y: int
         canvas.alpha_composite(foreground.convert("RGBA"), (x, y))
 
 
-def _uploaded_media_path(media_url: str | None) -> Path | None:
-    if not media_url or not media_url.startswith("/uploads/"):
+def _uploaded_media_path(media_url: str | None, owner_user_id: str) -> Path | None:
+    if not media_url:
         return None
-    path = UPLOADS_DIR / Path(media_url).name
-    return path if path.exists() else None
+    prefix = "/uploads/"
+    if not media_url.startswith(prefix):
+        raise ValueError("Percorso media non valido.")
+    filename = media_url[len(prefix):]
+    if not re.fullmatch(r"media_[0-9a-f]{12}\.(?:jpg|jpeg|png|webp|mp4|mov|webm|m4v|mp3|wav|m4a|aac|ogg)", filename):
+        raise ValueError("Percorso media non valido.")
+    try:
+        user_dir = user_storage_dir(UPLOADS_DIR, owner_user_id)
+    except ValueError as exc:
+        raise ValueError("Proprietario media non valido.") from exc
+    path = contained_regular_file(user_dir, filename)
+    if path is None:
+        raise ValueError("Media non trovato.")
+    return path
 
 
-def _is_video_media(media_url: str | None) -> bool:
-    path = _uploaded_media_path(media_url)
+def _is_video_media(media_url: str | None, owner_user_id: str) -> bool:
+    path = _uploaded_media_path(media_url, owner_user_id)
     return bool(path and path.suffix.lower() in VIDEO_EXTENSIONS)
 
 
@@ -182,8 +196,8 @@ def _compose_uploaded_visual(original: Image.Image, width: int, height: int, lay
     return canvas.convert("RGB")
 
 
-def _load_scene_image(image_url: str | None, width: int, height: int, layout: str = "auto") -> Image.Image | None:
-    image_path = _uploaded_media_path(image_url)
+def _load_scene_image(image_url: str | None, width: int, height: int, layout: str, owner_user_id: str) -> Image.Image | None:
+    image_path = _uploaded_media_path(image_url, owner_user_id)
     if not image_path or image_path.suffix.lower() in VIDEO_EXTENSIONS:
         return None
     try:
@@ -326,10 +340,10 @@ def _apply_cinematic_grade(img: Image.Image, scene, width: int, height: int) -> 
     return img
 
 
-def _draw_scene(storyboard: StoryboardPlan, scene_index: int, tone: str, visual_style: str, output_path: Path, width: int, height: int):
+def _draw_scene(storyboard: StoryboardPlan, scene_index: int, tone: str, visual_style: str, output_path: Path, width: int, height: int, owner_user_id: str):
     scene = storyboard.scenes[scene_index - 1]
     top, bottom, accent = TONE_BACKGROUNDS.get(tone, TONE_BACKGROUNDS["cinematic"])
-    media_image = _load_scene_image(scene.image_url, width, height, _scene_attr(scene, "visual_layout", "auto"))
+    media_image = _load_scene_image(scene.image_url, width, height, _scene_attr(scene, "visual_layout", "auto"), owner_user_id)
     img = media_image or _background_gradient(width, height, top, bottom)
     if media_image:
         img = _apply_photo_overlay(img, accent, width, height)
@@ -460,8 +474,8 @@ def _draw_text_brand_grade(img: Image.Image, scene, scene_index: int, accent, wi
     return _apply_cinematic_grade(img.convert("RGB"), scene, width, height)
 
 
-def _animate_uploaded_video_clip(scene, width: int, height: int, pacing: str, visual_style: str, accent, scene_index: int):
-    path = _uploaded_media_path(scene.image_url)
+def _animate_uploaded_video_clip(scene, width: int, height: int, pacing: str, visual_style: str, accent, scene_index: int, owner_user_id: str):
+    path = _uploaded_media_path(scene.image_url, owner_user_id)
     source = VideoFileClip(str(path))
     duration = scene.duration_seconds
     source_duration = max(.2, float(source.duration or duration))
@@ -519,7 +533,7 @@ def _animate_scene_clip(scene, scene_path: Path, width: int, height: int, pacing
 
     return VideoClip(frame_function=make_frame, duration=duration)
 
-def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = True, music_volume: float = 0.12, music_mood: str = "cinematic", music_track_url: str = "", music_start_seconds: float = 0, voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
+def render_storyboard(storyboard: StoryboardPlan, tone: str, owner_user_id: str, visual_style: str = "auto", pacing: str = "balanced", quality: str = "draft", music_enabled: bool = True, music_volume: float = 0.12, music_mood: str = "cinematic", music_track_url: str = "", music_start_seconds: float = 0, voice_enabled: bool = True, voice_volume: float = 0.95, voice_style: str = "studio", voice_rate: int = -1, on_progress=None) -> tuple[str, Path]:
     is_turbo = quality == "turbo"
     is_draft = quality == "draft"
     if is_turbo:
@@ -540,8 +554,21 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
         preset = "veryfast"
         video_bitrate = "8500k"
         audio_bitrate = "192k"
+    try:
+        output_dir = user_storage_dir(RENDERS_DIR, owner_user_id)
+        work_root = user_storage_dir(RENDERS_DIR / ".work", owner_user_id)
+    except ValueError as exc:
+        raise ValueError("Proprietario render non valido.") from exc
+    output_dir.mkdir(parents=True, exist_ok=True)
+    work_root.mkdir(parents=True, exist_ok=True)
+    for scene in storyboard.scenes:
+        if scene.image_url:
+            _uploaded_media_path(scene.image_url, owner_user_id)
+    if music_track_url and music_enabled:
+        _uploaded_media_path(music_track_url, owner_user_id)
+
     reel_id = uuid4().hex[:10]
-    work_dir = RENDERS_DIR / reel_id
+    work_dir = work_root / reel_id
     work_dir.mkdir(parents=True, exist_ok=True)
     clips = []
     for index, scene in enumerate(storyboard.scenes, start=1):
@@ -550,10 +577,10 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
             on_progress(progress, f"Sto preparando scena {index}: transizioni, testo vivo e sottotitoli animati...")
         scene_path = work_dir / f"scene_{index}.png"
         accent = TONE_BACKGROUNDS.get(tone, TONE_BACKGROUNDS["cinematic"])[2]
-        if _is_video_media(scene.image_url):
-            clips.append(_animate_uploaded_video_clip(scene, width, height, pacing, visual_style, accent, index))
+        if _is_video_media(scene.image_url, owner_user_id):
+            clips.append(_animate_uploaded_video_clip(scene, width, height, pacing, visual_style, accent, index, owner_user_id))
         else:
-            _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height)
+            _draw_scene(storyboard, index, tone, visual_style, scene_path, width, height, owner_user_id)
             clips.append(_animate_scene_clip(scene, scene_path, width, height, pacing, visual_style, accent))
     if on_progress:
         if is_turbo:
@@ -570,7 +597,7 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
     if music_enabled:
         if on_progress:
             on_progress(88, "Sto aggiungendo musica e mix audio...")
-        custom_music_path = _uploaded_media_path(music_track_url)
+        custom_music_path = _uploaded_media_path(music_track_url, owner_user_id)
         if custom_music_path:
             custom_music_gain = min(max(music_volume, 0.45), 0.85)
             base_music = AudioFileClip(str(custom_music_path)).with_volume_scaled(custom_music_gain)
@@ -610,7 +637,7 @@ def render_storyboard(storyboard: StoryboardPlan, tone: str, visual_style: str =
         final = final.with_audio(mixed_audio)
         audio_clips_to_close.append(mixed_audio)
     filename = f"matchiq_studio_reel_{reel_id}.mp4"
-    output_path = RENDERS_DIR / filename
+    output_path = output_dir / filename
     final.write_videofile(str(output_path), fps=fps, codec="libx264", audio=bool(audio_tracks), audio_codec="aac" if audio_tracks else None, audio_bitrate=audio_bitrate if audio_tracks else None, bitrate=video_bitrate, preset=preset, threads=4, logger=None)
     final.close()
     for audio_clip in audio_clips_to_close:

@@ -1,5 +1,6 @@
 import asyncio
 import json
+from io import BytesIO
 import sqlite3
 import tempfile
 import unittest
@@ -8,6 +9,7 @@ from http.cookies import SimpleCookie
 from pathlib import Path
 from urllib.parse import urlsplit
 from unittest.mock import patch
+from PIL import Image
 
 from backend.app.core import config
 
@@ -81,11 +83,18 @@ class ASGITestClient:
                     self.cookies.pop(name, None)
                 else:
                     self.cookies[name] = morsel.value
-        try:
-            data = json.loads(response_body) if response_body else None
-        except json.JSONDecodeError:
-            data = response_body
+        content_type = next((value for key, value in response_headers if key == "content-type"), "")
+        if response_body and "application/json" in content_type:
+            data = json.loads(response_body)
+        else:
+            data = response_body or None
         return start["status"], response_headers, data
+
+
+def tiny_png():
+    output = BytesIO()
+    Image.new("RGBA", (1, 1), (20, 80, 120, 255)).save(output, format="PNG")
+    return output.getvalue()
 
 
 class CentralAuthenticationTests(unittest.TestCase):
@@ -205,8 +214,8 @@ class CentralAuthenticationTests(unittest.TestCase):
             boundary = "matchiq-test-boundary"
             multipart = (
                 f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"tiny.png\"\r\n"
-                f"Content-Type: image/png\r\n\r\ntest-image\r\n--{boundary}--\r\n"
-            ).encode("ascii")
+                f"Content-Type: image/png\r\n\r\n"
+            ).encode("ascii") + tiny_png() + f"\r\n--{boundary}--\r\n".encode("ascii")
             status, _, asset = client.request(
                 "POST", "/api/media/upload", body=multipart,
                 headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
@@ -259,7 +268,7 @@ class CentralAuthenticationTests(unittest.TestCase):
             status, _, job = self.user_a.request("GET", f"/api/reels/status/{data['job_id']}")
             self.assertEqual(status, 200)
             self.assertEqual(job["status"], "done", job)
-            output_path = Path(render_dir) / job["filename"]
+            output_path = Path(render_dir) / auth._get_user_by_email("user-a@example.test")["id"] / job["filename"]
             self.assertTrue(output_path.is_file())
             self.assertGreater(output_path.stat().st_size, 0)
             reels.JOBS.pop(data["job_id"], None)

@@ -1,8 +1,10 @@
 import json
+from io import BytesIO
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from PIL import Image
 
 from test_auth_api import ASGITestClient
 
@@ -10,6 +12,12 @@ from backend.app.project import project_store
 from backend.app.campaigns import campaign_store
 from backend.app.render import reel_renderer
 from backend.app.routers import auth, media, reels
+
+
+def tiny_png():
+    output = BytesIO()
+    Image.new("RGBA", (1, 1), (20, 80, 120, 255)).save(output, format="PNG")
+    return output.getvalue()
 
 
 class OwnershipIsolationTests(unittest.TestCase):
@@ -283,8 +291,8 @@ class OwnershipIsolationTests(unittest.TestCase):
         boundary = "ownership-media-boundary"
         multipart = (
             f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"tiny.png\"\r\n"
-            f"Content-Type: image/png\r\n\r\ntest-image\r\n--{boundary}--\r\n"
-        ).encode("ascii")
+            "Content-Type: image/png\r\n\r\n"
+        ).encode("ascii") + tiny_png() + f"\r\n--{boundary}--\r\n".encode("ascii")
         status, _, asset = self.user_a.request(
             "POST", "/api/media/upload", body=multipart,
             headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
@@ -315,7 +323,7 @@ class OwnershipIsolationTests(unittest.TestCase):
             status, _, job = self.user_a.request("GET", f"/api/reels/status/{job_data['job_id']}")
             self.assertEqual(status, 200)
             self.assertEqual(job["status"], "done", job)
-            self.assertTrue((Path(render_dir) / job["filename"]).is_file())
+            self.assertTrue((Path(render_dir) / self.user_a_id / job["filename"]).is_file())
             reels.JOBS.pop(job_data["job_id"], None)
 
         self.assertEqual(self.user_b.request("GET", f"/api/projects/{project['id']}")[0], 404)

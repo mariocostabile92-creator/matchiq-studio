@@ -5,6 +5,7 @@ from backend.app.render.reel_renderer import render_storyboard
 
 
 def build_reel(
+    owner_user_id: str,
     brand_name: str,
     title: str,
     topic: str,
@@ -35,6 +36,7 @@ def build_reel(
     )
 
     return render_storyboard(
+        owner_user_id=owner_user_id,
         storyboard=storyboard,
         tone=tone,
         visual_style=visual_style,

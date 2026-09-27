@@ -25,7 +25,7 @@ executor = ThreadPoolExecutor(max_workers=1)
 JOBS = {}
 
 
-def _run_reel_job(job_id: str, payload: ReelCreateRequest):
+def _run_reel_job(job_id: str, payload: ReelCreateRequest, owner_user_id: str):
     try:
         JOBS[job_id]["status"] = "processing"
         JOBS[job_id]["progress"] = 18
@@ -36,6 +36,7 @@ def _run_reel_job(job_id: str, payload: ReelCreateRequest):
             JOBS[job_id]["message"] = message
 
         filename, _ = build_reel(
+            owner_user_id=owner_user_id,
             brand_name=payload.brand_name,
             title=payload.title,
             topic=payload.topic,
@@ -62,7 +63,7 @@ def _run_reel_job(job_id: str, payload: ReelCreateRequest):
         JOBS[job_id].update({"status":"error","progress":0,"message":"Errore durante la generazione.","error":str(exc)})
 
 
-def _run_storyboard_render_job(job_id: str, payload: StoryboardRenderRequest):
+def _run_storyboard_render_job(job_id: str, payload: StoryboardRenderRequest, owner_user_id: str):
     try:
         JOBS[job_id]["status"] = "processing"
         JOBS[job_id]["progress"] = 18
@@ -73,6 +74,7 @@ def _run_storyboard_render_job(job_id: str, payload: StoryboardRenderRequest):
             JOBS[job_id]["message"] = message
 
         filename, _ = render_storyboard(
+            owner_user_id=owner_user_id,
             storyboard=payload.storyboard,
             tone=payload.tone,
             visual_style=payload.visual_style,
@@ -96,18 +98,18 @@ def _run_storyboard_render_job(job_id: str, payload: StoryboardRenderRequest):
 
 
 @router.post("/create", response_model=ReelJobResponse)
-def create_reel(payload: ReelCreateRequest):
+def create_reel(payload: ReelCreateRequest, user=Depends(get_current_user)):
     job_id = uuid4().hex[:12]
-    JOBS[job_id] = {"status":"queued","progress":5,"message":"Reel messo in coda.","filename":None,"render_url":None,"error":None}
-    executor.submit(_run_reel_job, job_id, payload)
+    JOBS[job_id] = {"owner_user_id": user["id"], "status":"queued","progress":5,"message":"Reel messo in coda.","filename":None,"render_url":None,"error":None}
+    executor.submit(_run_reel_job, job_id, payload, user["id"])
     return ReelJobResponse(success=True, message="Generazione avviata.", job_id=job_id)
 
 
 @router.post("/render-storyboard", response_model=ReelJobResponse)
-def render_edited_storyboard(payload: StoryboardRenderRequest):
+def render_edited_storyboard(payload: StoryboardRenderRequest, user=Depends(get_current_user)):
     job_id = uuid4().hex[:12]
-    JOBS[job_id] = {"status":"queued","progress":5,"message":"Storyboard messo in coda.","filename":None,"render_url":None,"error":None}
-    executor.submit(_run_storyboard_render_job, job_id, payload)
+    JOBS[job_id] = {"owner_user_id": user["id"], "status":"queued","progress":5,"message":"Storyboard messo in coda.","filename":None,"render_url":None,"error":None}
+    executor.submit(_run_storyboard_render_job, job_id, payload, user["id"])
     return ReelJobResponse(success=True, message="Render storyboard avviato.", job_id=job_id)
 
 
@@ -147,8 +149,8 @@ def regenerate_storyboard_scene(payload: SceneRegenerateRequest):
 
 
 @router.get("/status/{job_id}", response_model=ReelStatusResponse)
-def get_reel_status(job_id: str):
+def get_reel_status(job_id: str, user=Depends(get_current_user)):
     job = JOBS.get(job_id)
-    if not job:
+    if not job or job.get("owner_user_id") != user["id"]:
         raise HTTPException(status_code=404, detail="Job non trovato.")
     return ReelStatusResponse(success=True,status=job["status"],message=job["message"],progress=job["progress"],render_url=job["render_url"],filename=job["filename"],error=job["error"])

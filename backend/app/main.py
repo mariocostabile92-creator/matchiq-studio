@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.app.core.config import APP_NAME, APP_VERSION, FRONTEND_DIR, RENDERS_DIR, UPLOADS_DIR
-from backend.app.routers import auth, campaigns, media, projects, reels
+from backend.app.core.config import APP_NAME, APP_VERSION, FRONTEND_DIR
+from backend.app.routers import auth, campaigns, files, media, projects, reels
 
 app = FastAPI(
     title=APP_NAME,
@@ -45,6 +45,7 @@ app.include_router(reels.router)
 app.include_router(projects.router)
 app.include_router(campaigns.router)
 app.include_router(media.router)
+app.include_router(files.router)
 
 
 @app.get("/api/health")
@@ -61,6 +62,4 @@ def favicon():
     return FileResponse(FRONTEND_DIR / "favicon.ico", media_type="image/x-icon")
 
 
-app.mount("/renders", StaticFiles(directory=str(RENDERS_DIR)), name="renders")
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
